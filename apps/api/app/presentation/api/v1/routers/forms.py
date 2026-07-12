@@ -1,7 +1,6 @@
-"""Router de formulários — inclui endpoint de análise com Celery."""
+"""Router de formulários — inclui endpoints de análise, status, partes e checklist."""
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from uuid import uuid4
 
 router = APIRouter()
 
@@ -27,10 +26,7 @@ async def get_form(form_id: str):
 
 @router.post("/{form_id}/analyze")
 async def analyze_form_endpoint(form_id: str, body: AnalyzeRequest):
-    """
-    Enfileira task Celery analyze_form para o form_id informado.
-    No MVP aceita pdf_path local para testes sem storage.
-    """
+    """Enfileira task Celery analyze_form."""
     try:
         from app.celery_client import get_celery
         celery = get_celery()
@@ -49,6 +45,25 @@ async def get_form_status(form_id: str):
     return {"form_id": form_id, "status": "pending"}
 
 
+@router.get("/{form_id}/parties")
+async def get_parties(form_id: str):
+    """Retorna as partes detectadas pelo LLM para o formulário."""
+    import os, json
+    path = f"/tmp/form_{form_id}_checklist.json"
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Partes ainda não processadas")
+    with open(path) as f:
+        data = json.load(f)
+    return {"form_id": form_id, "parties": data.get("parties_detected", {})}
+
+
 @router.get("/{form_id}/checklist")
 async def get_checklist(form_id: str):
-    return {"form_id": form_id, "checklist": []}
+    """Retorna o checklist gerado com status de cada documento."""
+    import os, json
+    path = f"/tmp/form_{form_id}_checklist.json"
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Checklist ainda não gerada")
+    with open(path) as f:
+        data = json.load(f)
+    return {"form_id": form_id, "checklist": data.get("checklist", {})}
