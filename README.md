@@ -38,5 +38,5 @@ docker compose up --build
 - [x] Bloco 4 — Preenchimento de PDF
 - [x] Bloco 5 — Frontend Next.js
 - [x] Bloco 6 — Banco de dados e migrations
-- [ ] Bloco 7 — Segurança e LGPD
+- [x] Bloco 7 — Segurança e LGPD
 - [ ] Bloco 8 — Escalabilidade e recursos avançados

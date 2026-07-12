@@ -1,22 +1,30 @@
+"""Entrypoint FastAPI com CORS, routers e middleware de segurança."""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.presentation.api.v1.routers import auth, forms, documents, health
+from app.presentation.api.v1.routers import auth, forms, lgpd
 
 app = FastAPI(
-    title="SaaS Form Filler",
+    title="Forms AI API",
     version="0.1.0",
-    description="Plataforma de IA para leitura e preenchimento de formulários bancários e imobiliários",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(health.router, prefix="/api/v1")
-app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
-app.include_router(forms.router, prefix="/api/v1/forms", tags=["forms"])
-app.include_router(documents.router, prefix="/api/v1/documents", tags=["documents"])
+# Routers
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(forms.router, prefix="/forms", tags=["forms"])
+app.include_router(lgpd.router, prefix="/lgpd", tags=["lgpd"])
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
