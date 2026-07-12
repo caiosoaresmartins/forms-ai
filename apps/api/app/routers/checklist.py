@@ -13,10 +13,11 @@ from fastapi import APIRouter, HTTPException, Depends
 
 from app.core.dependencies import get_current_user
 from app.infrastructure.database.models.user import User
+from app.infrastructure.storage.s3_client import S3Storage
 
 router = APIRouter(prefix="/forms", tags=["checklist"])
 
-DATA_DIR = Path("app/data/forms")
+s3 = S3Storage()
 
 
 @router.get("/{form_id}/checklist")
@@ -24,11 +25,10 @@ async def get_checklist(
     form_id: str,
     current_user: User = Depends(get_current_user),
 ):
-    checklist_path = DATA_DIR / f"{form_id}_checklist.json"
-    if not checklist_path.exists():
+    checklist_object = f"checklists/{form_id}_checklist.json"
+    if not s3.exists(checklist_object):
         raise HTTPException(status_code=404, detail="Checklist ainda não gerada")
-    with checklist_path.open() as f:
-        return json.load(f)
+    return s3.download_json(checklist_object)
 
 
 @router.post("/{form_id}/checklist")

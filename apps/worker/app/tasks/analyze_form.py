@@ -38,11 +38,15 @@ def analyze_form(self, form_id: str, tenant_id: str, pdf_path: str | None = None
         "total_pages": len(pages),
     }
 
-    output_path = f"/tmp/form_{form_id}_analyzed.json"
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+    import sys
+    sys.path.insert(0, "/app")
+    from app.infrastructure.storage.s3_client import S3Storage
+    s3 = S3Storage()
+
+    output_object = f"docs/form_{form_id}_analyzed.json"
+    s3.upload_json(result, output_object)
 
     from app.tasks.extract_data import extract_data
-    extract_data.delay(form_id, tenant_id, output_path)
+    extract_data.delay(form_id, tenant_id, output_object)
 
-    return {"form_id": form_id, "status": "analyzed", "output_path": output_path}
+    return {"form_id": form_id, "status": "analyzed", "output_object": output_object}

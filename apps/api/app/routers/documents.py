@@ -23,11 +23,11 @@ from pydantic import BaseModel
 
 from app.core.dependencies import get_current_user
 from app.infrastructure.database.models.user import User
+from app.infrastructure.storage.s3_client import S3Storage
 
 router = APIRouter(prefix="/forms", tags=["documents"])
 
-DOCS_DIR = Path("app/data/forms/docs")
-DATA_DIR = Path("app/data/forms")
+s3 = S3Storage()
 
 ALLOWED_MIME = {
     "application/pdf",
@@ -69,29 +69,28 @@ async def upload_document(
             detail=f"Arquivo maior que {MAX_SIZE_MB} MB.",
         )
 
-    dest_dir = DOCS_DIR / form_id / str(party_index)
-    dest_dir.mkdir(parents=True, exist_ok=True)
-
     file_id = uuid.uuid4().hex
     suffix = Path(file.filename or "doc").suffix or ".bin"
-    dest_path = dest_dir / f"{file_id}{suffix}"
-    dest_path.write_bytes(content)
+    object_name = f"docs/{form_id}/{party_index}/{file_id}{suffix}"
+    
+    s3.upload_file_bytes(content, object_name, file.content_type)
 
-    # Atualiza o índice de documentos da parte
-    index_path = dest_dir / "index.json"
+    # Atualiza o índice de documentos da parte no S3
+    index_object = f"docs/{form_id}/{party_index}/index.json"
     index: list[dict] = []
-    if index_path.exists():
-        index = json.loads(index_path.read_text())
+    if s3.exists(index_object):
+        index = s3.download_json(index_object)
 
     entry = {
         "file_id": file_id,
         "original_name": file.filename,
         "content_type": file.content_type,
         "size_bytes": len(content),
-        "path": str(dest_path),
+        "path": object_name,
+        "url": s3.get_presigned_url(object_name)
     }
     index.append(entry)
-    index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2))
+    s3.upload_json(index, index_object)
 
     return entry
 
@@ -107,10 +106,10 @@ async def list_documents(
     current_user: User = Depends(get_current_user),
 ):
     """Lista os documentos já enviados para uma parte."""
-    index_path = DOCS_DIR / form_id / str(party_index) / "index.json"
-    if not index_path.exists():
+    index_object = f"docs/{form_id}/{party_index}/index.json"
+    if not s3.exists(index_object):
         return {"documents": []}
-    return {"documents": json.loads(index_path.read_text())}
+    return {"documents": s3.download_json(index_object)}
 
 
 # ---------------------------------------------------------------------------
@@ -134,11 +133,11 @@ async def update_checklist_item(
     party_index: posição da parte no array checklist[]
     doc_index:   posição do documento no array documents[] da parte
     """
-    checklist_path = DATA_DIR / f"{form_id}_checklist.json"
-    if not checklist_path.exists():
+    checklist_object = f"checklists/{form_id}_checklist.json"
+    if not s3.exists(checklist_object):
         raise HTTPException(status_code=404, detail="Checklist não encontrada")
 
-    data = json.loads(checklist_path.read_text())
+    data = s3.download_json(checklist_object)
     items: list[dict] = data.get("checklist", [])
 
     if party_index >= len(items):
@@ -149,7 +148,7 @@ async def update_checklist_item(
         raise HTTPException(status_code=404, detail="Índice de documento fora do range")
 
     documents[doc_index]["uploaded"] = body.uploaded
-    checklist_path.write_text(json.dumps(data, ensure_ascii=False, indent=2))
+    s3.upload_json(data, checklist_object)
 
     return {
         "party_index": party_index,

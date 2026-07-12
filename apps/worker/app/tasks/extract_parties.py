@@ -32,8 +32,15 @@ def extract_parties(self, form_id: str, tenant_id: str, form_json_path: str):
     4. Fallback para regex se Groq indisponível
     5. Retornar resultado estruturado
     """
-    with open(form_json_path, "r", encoding="utf-8") as f:
-        form_data = json.load(f)
+    import sys
+    sys.path.insert(0, "/app")
+    from app.infrastructure.storage.s3_client import S3Storage
+    s3 = S3Storage()
+
+    if not s3.exists(form_json_path):
+        raise FileNotFoundError(f"JSON analisado não encontrado no S3: {form_json_path}")
+        
+    form_data = s3.download_json(form_json_path)
 
     full_text = " ".join(p["text"] for p in form_data.get("pages", []))
 
@@ -65,8 +72,17 @@ def extract_parties(self, form_id: str, tenant_id: str, form_json_path: str):
         "status": "checklist_ready",
     }
 
-    output_path = f"/tmp/form_{form_id}_checklist.json"
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+    import sys
+    sys.path.insert(0, "/app")
+    from app.infrastructure.storage.s3_client import S3Storage
+    s3 = S3Storage()
+
+    # Salva checklist
+    checklist_object = f"checklists/{form_id}_checklist.json"
+    s3.upload_json(result, checklist_object)
+
+    # Salva partes separadamente (para o caso de regenerate_checklist precisar)
+    parties_object = f"docs/{form_id}_parties.json"
+    s3.upload_json(parties, parties_object)
 
     return result
