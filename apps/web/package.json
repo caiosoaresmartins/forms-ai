@@ -17,7 +17,7 @@
     "axios": "^1.7.2",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.3.0",
-    "lucide-react": "^0.395.0",
+    "lucide-react": "^0.460.0",
     "@radix-ui/react-dialog": "^1.1.1",
     "@radix-ui/react-progress": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.1",
