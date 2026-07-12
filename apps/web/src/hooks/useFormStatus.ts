@@ -7,7 +7,24 @@ type FormStatus = {
 }
 
 type Parties = Record<string, unknown[]>
-type Checklist = { checklist: unknown[] }
+
+type Document = {
+  name: string
+  required: boolean
+  notes?: string
+  uploaded?: boolean
+}
+
+type ChecklistItem = {
+  party_type: string
+  party_index: number
+  party_name: string
+  documents: Document[]
+}
+
+type ChecklistResponse = {
+  checklist: ChecklistItem[]
+}
 
 export function useFormStatus(formId: string) {
   const statusQuery = useQuery<FormStatus>({
@@ -36,7 +53,7 @@ export function useFormStatus(formId: string) {
     retry: false,
   })
 
-  const checklistQuery = useQuery<{ checklist: Checklist }>({
+  const checklistQuery = useQuery<ChecklistResponse>({
     queryKey: ['form-checklist', formId],
     queryFn: async () => {
       const { data } = await api.get(`/forms/${formId}/checklist`)
@@ -49,7 +66,7 @@ export function useFormStatus(formId: string) {
   return {
     status,
     parties: partiesQuery.data?.parties ?? null,
-    checklist: checklistQuery.data?.checklist ?? null,
+    checklist: checklistQuery.data ?? null,
     isLoading: statusQuery.isLoading,
   }
 }
