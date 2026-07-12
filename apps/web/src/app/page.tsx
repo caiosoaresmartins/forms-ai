@@ -536,7 +536,7 @@ export default function App() {
   };
 
   const handleUploadStart = () => {
-    setFormId(\`job-\${Math.floor(Math.random() * 10000)}\`);
+    setFormId(`job-${Math.floor(Math.random() * 10000)}`);
     setCurrentView('analyzing');
     addToast('Iniciando análise com IA...', 'default');
   };
@@ -548,7 +548,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans flex flex-col selection:bg-indigo-500/30 overflow-x-hidden">
-      <style dangerouslySetInnerHTML={{__html: \`
+      <style dangerouslySetInnerHTML={{__html: `
         @keyframes slide-up { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
         .animate-slide-up { animation: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
@@ -562,7 +562,7 @@ export default function App() {
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
-      \`}} />
+      `}} />
 
       {/* THREE.JS Cosmic Background Layer */}
       <CosmicBackground currentView={currentView} />
@@ -785,16 +785,16 @@ function UploadZone({ onUpload }: any) {
       </div>
 
       <div 
-        className={\`w-full max-w-2xl border border-dashed rounded-3xl p-14 text-center transition-all duration-300 flex flex-col items-center justify-center bg-zinc-900/30 backdrop-blur-xl relative overflow-hidden
-          \${isDragging ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_50px_rgba(99,102,241,0.2)]' : 'border-white/20 hover:border-white/30 hover:bg-white/[0.04]'}
-        \`}
+        className={`w-full max-w-2xl border border-dashed rounded-3xl p-14 text-center transition-all duration-300 flex flex-col items-center justify-center bg-zinc-900/30 backdrop-blur-xl relative overflow-hidden
+          ${isDragging ? 'border-indigo-500 bg-indigo-500/10 shadow-[0_0_50px_rgba(99,102,241,0.2)]' : 'border-white/20 hover:border-white/30 hover:bg-white/[0.04]'}
+        `}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className={\`absolute inset-0 bg-indigo-500/20 blur-[100px] transition-opacity duration-500 pointer-events-none \${isDragging ? 'opacity-100' : 'opacity-0'}\`}></div>
+        <div className={`absolute inset-0 bg-indigo-500/20 blur-[100px] transition-opacity duration-500 pointer-events-none ${isDragging ? 'opacity-100' : 'opacity-0'}`}></div>
 
-        <UploadCloud className={\`w-16 h-16 mb-6 transition-colors duration-300 relative z-10 \${isDragging ? 'text-indigo-400' : 'text-zinc-500'}\`} strokeWidth={1} />
+        <UploadCloud className={`w-16 h-16 mb-6 transition-colors duration-300 relative z-10 ${isDragging ? 'text-indigo-400' : 'text-zinc-500'}`} strokeWidth={1} />
         
         {!file ? (
           <div className="relative z-10">
@@ -881,22 +881,22 @@ function AnalyzingView({ onComplete }: any) {
             return (
               <div 
                 key={index} 
-                className={\`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500
-                  \${isPast ? 'bg-zinc-950/40 border-white/5 opacity-60' : 
+                className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500
+                  ${isPast ? 'bg-zinc-950/40 border-white/5 opacity-60' : 
                     isActive ? 'bg-zinc-800/60 border-violet-500/30 shadow-[0_0_20px_rgba(139,92,246,0.1)] relative overflow-hidden' : 
                     'bg-zinc-950/20 border-white/5 opacity-30'}
-                \`}
+                `}
               >
                 {isActive && <div className="absolute inset-0 bg-shimmer opacity-20 pointer-events-none"></div>}
                 
-                <div className={\`w-6 h-6 rounded-full flex items-center justify-center shrink-0 relative z-10
-                  \${isPast ? 'bg-emerald-500/20 text-emerald-400' : 
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 relative z-10
+                  ${isPast ? 'bg-emerald-500/20 text-emerald-400' : 
                     isActive ? 'bg-violet-500/20 text-violet-400' : 
                     'bg-zinc-800 text-zinc-600'}
-                \`}>
+                `}>
                   {isPast ? <Check className="w-3.5 h-3.5" /> : <Circle className="w-2 h-2 fill-current" />}
                 </div>
-                <span className={\`text-sm font-medium relative z-10 transition-colors \${isActive ? 'text-violet-100' : 'text-zinc-400'}\`}>
+                <span className={`text-sm font-medium relative z-10 transition-colors ${isActive ? 'text-violet-100' : 'text-zinc-400'}`}>
                   {step.text}
                 </span>
               </div>
@@ -933,7 +933,7 @@ function ChecklistPanel({ parties, setParties, formId, addToast }: any) {
             <span className="font-semibold text-emerald-400">{progressPercent}%</span>
           </div>
           <div className="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-white/5">
-            <div className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{ width: \`\${progressPercent}%\` }}></div>
+            <div className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-2 rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{ width: `${progressPercent}%` }}></div>
           </div>
         </div>
       </div>
@@ -999,27 +999,27 @@ function DocumentItem({ doc, isLast, onToggle }: any) {
   const [showXAI, setShowXAI] = useState(false);
 
   return (
-    <div className={\`flex flex-col p-4 rounded-2xl transition-all duration-300 \${!isLast ? 'mb-2' : ''} \${isUploaded ? 'bg-emerald-500/[0.03]' : 'hover:bg-white/[0.03]'}\`}>
+    <div className={`flex flex-col p-4 rounded-2xl transition-all duration-300 ${!isLast ? 'mb-2' : ''} ${isUploaded ? 'bg-emerald-500/[0.03]' : 'hover:bg-white/[0.03]'}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button 
             onClick={onToggle}
             disabled={isUpdating}
-            className={\`shrink-0 flex items-center justify-center w-6 h-6 rounded-md transition-all duration-300
-              \${isUpdating ? 'opacity-50 cursor-wait' : ''}
-              \${isUploaded ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'border border-zinc-700 bg-zinc-950 text-transparent hover:border-indigo-400/60'}
-            \`}
+            className={`shrink-0 flex items-center justify-center w-6 h-6 rounded-md transition-all duration-300
+              ${isUpdating ? 'opacity-50 cursor-wait' : ''}
+              ${isUploaded ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'border border-zinc-700 bg-zinc-950 text-transparent hover:border-indigo-400/60'}
+            `}
           >
             {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" /> : isUploaded ? <Check className="w-4 h-4" strokeWidth={2.5} /> : null}
           </button>
           
           <div className="flex items-center gap-3">
-            <span className={\`text-[15px] font-medium transition-colors \${isUploaded ? 'text-zinc-300' : 'text-zinc-200'}\`}>
+            <span className={`text-[15px] font-medium transition-colors ${isUploaded ? 'text-zinc-300' : 'text-zinc-200'}`}>
               {doc.name}
             </span>
             <button 
               onClick={() => setShowXAI(!showXAI)}
-              className={\`p-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-medium \${showXAI ? 'bg-indigo-500/20 text-indigo-300' : 'text-zinc-500 hover:text-indigo-400 hover:bg-white/5'}\`}
+              className={`p-1.5 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-medium ${showXAI ? 'bg-indigo-500/20 text-indigo-300' : 'text-zinc-500 hover:text-indigo-400 hover:bg-white/5'}`}
               title="Por que a IA pediu isso?"
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -1045,7 +1045,7 @@ function DocumentItem({ doc, isLast, onToggle }: any) {
       </div>
       
       {/* Expandable Explainable AI (XAI) Panel */}
-      <div className={\`overflow-hidden transition-all duration-500 ease-in-out \${showXAI ? 'max-h-32 opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}\`}>
+      <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showXAI ? 'max-h-32 opacity-100 mt-4' : 'max-h-0 opacity-0 mt-0'}`}>
         <div className="ml-10 flex gap-3 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-xl relative overflow-hidden">
           <div className="absolute inset-0 bg-shimmer opacity-10 pointer-events-none"></div>
           <Info className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5 relative z-10" strokeWidth={1.5} />
