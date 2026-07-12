@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.presentation.api.v1.routers import auth, forms, lgpd
-from app.routers import checklist, documents
+from app.routers import checklist, documents, pdf_download
 
 app = FastAPI(
     title="Forms AI API",
@@ -26,6 +26,7 @@ app.include_router(forms.router, prefix="/forms", tags=["forms"])
 app.include_router(lgpd.router, prefix="/lgpd", tags=["lgpd"])
 app.include_router(checklist.router)
 app.include_router(documents.router)
+app.include_router(pdf_download.router)
 
 
 @app.get("/health")

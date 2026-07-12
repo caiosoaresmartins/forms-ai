@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 
 type FormStatus = {
@@ -27,6 +27,8 @@ type ChecklistResponse = {
 }
 
 export function useFormStatus(formId: string) {
+  const queryClient = useQueryClient()
+
   const statusQuery = useQuery<FormStatus>({
     queryKey: ['form-status', formId],
     queryFn: async () => {
@@ -63,10 +65,15 @@ export function useFormStatus(formId: string) {
     retry: false,
   })
 
+  function refetch() {
+    queryClient.invalidateQueries({ queryKey: ['form-checklist', formId] })
+  }
+
   return {
     status,
     parties: partiesQuery.data?.parties ?? null,
     checklist: checklistQuery.data ?? null,
     isLoading: statusQuery.isLoading,
+    refetch,
   }
 }
