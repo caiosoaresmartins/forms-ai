@@ -75,6 +75,13 @@ const plans = [
   },
 ]
 
+const pipelineSteps = [
+  { step: '01', label: 'Upload do PDF' },
+  { step: '02', label: 'OCR + Extração IA' },
+  { step: '03', label: 'Checklist de docs' },
+  { step: '04', label: 'PDF preenchido' },
+]
+
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -130,7 +137,6 @@ export default function LoginPage() {
       {/* HERO */}
       <section className="pt-32 pb-24 px-6">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-          {/* LEFT — copy */}
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-medium mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
@@ -154,9 +160,8 @@ export default function LoginPage() {
                 </span>
               ))}
             </div>
-            {/* Stats */}
             <div className="grid grid-cols-3 gap-6 pt-8 border-t border-zinc-800">
-              {[['10×', 'mais rápido'], ['99%', 'precisão OCR'], ['100%', 'LGPD']].map(([num, label]) => (
+              {([['10×', 'mais rápido'], ['99%', 'precisão OCR'], ['100%', 'LGPD']] as [string, string][]).map(([num, label]) => (
                 <div key={label}>
                   <p className="text-2xl font-bold text-teal-400">{num}</p>
                   <p className="text-xs text-zinc-500 mt-0.5">{label}</p>
@@ -165,7 +170,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* RIGHT — login card */}
           <div className="w-full max-w-sm mx-auto lg:mx-0 lg:ml-auto">
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl shadow-black/40">
               <h2 className="text-xl font-semibold text-white mb-1">Acesse sua conta</h2>
@@ -265,23 +269,16 @@ export default function LoginPage() {
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-zinc-500 text-sm mb-10">Como funciona em 4 etapas</p>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-            {[
-              { step: '01', label: 'Upload do PDF' },
-              { step: '02', label: 'OCR + Extração IA' },
-              { step: '03', label: 'Checklist de docs' },
-              { step: '04', label: 'PDF preenchido' },
-            ].map((item, i, arr) => (
-              <>
-                <div key={item.step} className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-full bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 font-bold text-sm">
-                    {item.step}
-                  </div>
-                  <p className="text-zinc-400 text-xs font-medium">{item.label}</p>
+            {pipelineSteps.map((item, i) => (
+              <div key={item.step} className="flex flex-row md:flex-col items-center gap-3 md:gap-2">
+                <div className="w-12 h-12 rounded-full bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 font-bold text-sm shrink-0">
+                  {item.step}
                 </div>
-                {i < arr.length - 1 && (
-                  <div key={`arrow-${i}`} className="hidden md:flex text-zinc-700 text-xl font-light">→</div>
+                <p className="text-zinc-400 text-xs font-medium">{item.label}</p>
+                {i < pipelineSteps.length - 1 && (
+                  <span className="hidden md:inline text-zinc-600 text-lg ml-2">→</span>
                 )}
-              </>
+              </div>
             ))}
           </div>
         </div>
