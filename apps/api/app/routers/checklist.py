@@ -9,15 +9,21 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+
+from app.core.dependencies import get_current_user
+from app.infrastructure.database.models.user import User
 
 router = APIRouter(prefix="/forms", tags=["checklist"])
 
-DATA_DIR = Path("/tmp/forms")
+DATA_DIR = Path("app/data/forms")
 
 
 @router.get("/{form_id}/checklist")
-async def get_checklist(form_id: str):
+async def get_checklist(
+    form_id: str,
+    current_user: User = Depends(get_current_user),
+):
     checklist_path = DATA_DIR / f"{form_id}_checklist.json"
     if not checklist_path.exists():
         raise HTTPException(status_code=404, detail="Checklist ainda não gerada")
@@ -26,7 +32,10 @@ async def get_checklist(form_id: str):
 
 
 @router.post("/{form_id}/checklist")
-async def regenerate_checklist(form_id: str):
+async def regenerate_checklist(
+    form_id: str,
+    current_user: User = Depends(get_current_user),
+):
     """
     Dispara novamente a task generate_checklist para o form_id informado.
     Útil para regenerar em caso de erro ou mudança nas partes.

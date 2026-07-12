@@ -18,13 +18,16 @@ import shutil
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from pydantic import BaseModel
+
+from app.core.dependencies import get_current_user
+from app.infrastructure.database.models.user import User
 
 router = APIRouter(prefix="/forms", tags=["documents"])
 
-DOCS_DIR = Path("/tmp/forms/docs")
-DATA_DIR = Path("/tmp/forms")
+DOCS_DIR = Path("app/data/forms/docs")
+DATA_DIR = Path("app/data/forms")
 
 ALLOWED_MIME = {
     "application/pdf",
@@ -47,6 +50,7 @@ async def upload_document(
     form_id: str,
     party_index: int,
     file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Faz upload de um documento para a parte identificada por party_index.
@@ -97,7 +101,11 @@ async def upload_document(
 # ---------------------------------------------------------------------------
 
 @router.get("/{form_id}/parties/{party_index}/documents")
-async def list_documents(form_id: str, party_index: int):
+async def list_documents(
+    form_id: str, 
+    party_index: int,
+    current_user: User = Depends(get_current_user),
+):
     """Lista os documentos já enviados para uma parte."""
     index_path = DOCS_DIR / form_id / str(party_index) / "index.json"
     if not index_path.exists():
@@ -119,6 +127,7 @@ async def update_checklist_item(
     party_index: int,
     doc_index: int,
     body: ChecklistItemUpdate,
+    current_user: User = Depends(get_current_user),
 ):
     """
     Marca ou desmarca um documento da checklist como entregue.
