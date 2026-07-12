@@ -35,8 +35,8 @@ docker compose up --build
 - [x] Bloco 1 — Fundação do monorepo
 - [x] Bloco 2 — Pipeline OCR (PaddleOCR + pypdf + Celery)
 - [x] Bloco 3 — Checklist com LLM (Groq) + fallback regex
-- [ ] Bloco 4 — Preenchimento de PDF
-- [ ] Bloco 5 — Frontend Next.js
-- [ ] Bloco 6 — Banco de dados e migrations
+- [x] Bloco 4 — Preenchimento de PDF
+- [x] Bloco 5 — Frontend Next.js
+- [x] Bloco 6 — Banco de dados e migrations
 - [ ] Bloco 7 — Segurança e LGPD
 - [ ] Bloco 8 — Escalabilidade e recursos avançados
