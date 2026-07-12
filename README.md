@@ -39,4 +39,4 @@ docker compose up --build
 - [x] Bloco 5 — Frontend Next.js
 - [x] Bloco 6 — Banco de dados e migrations
 - [x] Bloco 7 — Segurança e LGPD
-- [ ] Bloco 8 — Escalabilidade e recursos avançados
+- [x] Bloco 8 — Escalabilidade e recursos avançados
