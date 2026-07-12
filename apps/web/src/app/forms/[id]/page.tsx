@@ -1,43 +1,33 @@
 'use client'
-import { useParams } from 'next/navigation'
+import { use } from 'react'
 import { useFormStatus } from '@/hooks/useFormStatus'
 import { ChecklistPanel } from '@/components/checklist/ChecklistPanel'
-import { PartiesPanel } from '@/components/parties/PartiesPanel'
-import { StatusBadge } from '@/components/ui/StatusBadge'
-import { DownloadButton } from '@/components/ui/DownloadButton'
 
-export default function FormDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const { status, parties, checklist, isLoading } = useFormStatus(id)
+export default function FormPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
+  const { checklist, status, isLoading } = useFormStatus(id)
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-3 text-zinc-400">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-          <span className="text-sm">Processando formulário…</span>
-        </div>
-      </div>
+      <main className="mx-auto max-w-3xl px-4 py-10">
+        <p className="text-sm text-zinc-400">Carregando...</p>
+      </main>
     )
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-12">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Formulário</h1>
-          <p className="mt-1 font-mono text-sm text-zinc-400">{id}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <StatusBadge status={status} />
-          {status === 'filled' && <DownloadButton formId={id} />}
-        </div>
+    <main className="mx-auto max-w-3xl px-4 py-10 space-y-6">
+      <div className="flex items-center gap-3">
+        <h1 className="text-xl font-semibold">Formulário</h1>
+        <span className="text-xs rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-zinc-500">
+          {status}
+        </span>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <PartiesPanel parties={parties} />
-        <ChecklistPanel checklist={checklist} />
-      </div>
+      <ChecklistPanel
+        formId={id}
+        checklist={checklist}
+      />
     </main>
   )
 }
