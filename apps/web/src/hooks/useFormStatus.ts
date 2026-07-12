@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api'
+import { api } from '@/lib/api'
 
 type FormStatus = {
   form_id: string
@@ -13,7 +13,7 @@ export function useFormStatus(formId: string) {
   const statusQuery = useQuery<FormStatus>({
     queryKey: ['form-status', formId],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/forms/${formId}/status`)
+      const { data } = await api.get(`/forms/${formId}/status`)
       return data
     },
     refetchInterval: (query) => {
@@ -29,7 +29,7 @@ export function useFormStatus(formId: string) {
   const partiesQuery = useQuery<{ parties: Parties }>({
     queryKey: ['form-parties', formId],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/forms/${formId}/parties`)
+      const { data } = await api.get(`/forms/${formId}/parties`)
       return data
     },
     enabled: isDone,
@@ -39,7 +39,7 @@ export function useFormStatus(formId: string) {
   const checklistQuery = useQuery<{ checklist: Checklist }>({
     queryKey: ['form-checklist', formId],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/forms/${formId}/checklist`)
+      const { data } = await api.get(`/forms/${formId}/checklist`)
       return data
     },
     enabled: isDone,

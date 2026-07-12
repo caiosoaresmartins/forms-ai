@@ -4,7 +4,7 @@ import { useDropzone } from 'react-dropzone'
 import { useRouter } from 'next/navigation'
 import { Upload, FileText, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { apiClient } from '@/lib/api'
+import { api } from '@/lib/api'
 
 type UploadState = 'idle' | 'uploading' | 'error'
 
@@ -27,7 +27,7 @@ export function UploadZone() {
         const formData = new FormData()
         formData.append('file', file)
 
-        const { data } = await apiClient.post<{ form_id: string }>('/forms/upload', formData, {
+        const { data } = await api.post<{ form_id: string }>('/forms/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
           onUploadProgress: (e) => {
             if (e.total) setProgress(Math.round((e.loaded / e.total) * 100))
@@ -47,7 +47,7 @@ export function UploadZone() {
     onDrop,
     accept: { 'application/pdf': ['.pdf'] },
     maxFiles: 1,
-    maxSize: 20 * 1024 * 1024, // 20 MB
+    maxSize: 20 * 1024 * 1024,
   })
 
   return (

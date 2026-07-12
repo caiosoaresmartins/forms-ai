@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authApi } from '@/lib/api'
+import type { AxiosError } from 'axios'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -21,8 +22,9 @@ export default function RegisterPage() {
     try {
       await authApi.register(form)
       router.push('/login?registered=1')
-    } catch (err: any) {
-      setError(err?.response?.data?.detail ?? 'Erro ao criar conta.')
+    } catch (err: unknown) {
+      const axiosErr = err as AxiosError<{ detail?: string }>
+      setError(axiosErr?.response?.data?.detail ?? 'Erro ao criar conta.')
     } finally {
       setLoading(false)
     }
