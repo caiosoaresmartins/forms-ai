@@ -33,7 +33,7 @@ docker compose up --build
 ## Roadmap
 
 - [x] Bloco 1 — Fundação do monorepo
-- [ ] Bloco 2 — Pipeline OCR
+- [x] Bloco 2 — Pipeline OCR (PaddleOCR + pypdf + Celery)
 - [ ] Bloco 3 — Checklist com LLM (Groq)
 - [ ] Bloco 4 — Preenchimento de PDF
 - [ ] Bloco 5 — Frontend Next.js
