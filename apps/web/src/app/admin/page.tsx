@@ -22,6 +22,19 @@ export default function AdminPage() {
   const [clients, setClients] = useState<any[]>([]);
   const [admins, setAdmins] = useState<any[]>([]);
 
+  const fetchAdminData = async () => {
+    try {
+      const res = await fetch('/api/admin/clients');
+      if (res.ok) {
+        const data = await res.json();
+        setClients(data.clients || []);
+        setAdmins(data.admins || []);
+      }
+    } catch (err) {
+      console.error('Falha ao carregar dados:', err);
+    }
+  };
+
   // Carrega estado do localStorage
   useEffect(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('admin_auth') === 'true') {
@@ -29,6 +42,7 @@ export default function AdminPage() {
       const role = localStorage.getItem('admin_role') as 'SUPER_ADMIN' | 'ADMIN' | null;
       setAdminRole(role || 'ADMIN');
       setTimeout(animateQuotaBars, 100);
+      fetchAdminData();
     }
   }, []);
 
@@ -55,6 +69,7 @@ export default function AdminPage() {
       setAdminRole(userRole as 'SUPER_ADMIN' | 'ADMIN');
       setIsAuthenticated(true);
       setTimeout(animateQuotaBars, 100);
+      fetchAdminData();
     } catch(err) {
       setError('Erro na conexão com o servidor.');
     } finally {

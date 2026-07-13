@@ -50,3 +50,25 @@ export async function kvSet(key: string, value: any): Promise<boolean> {
   if (result[0]?.error) throw new Error(result[0].error);
   return true;
 }
+
+/**
+ * Retorna as chaves que batem com um padrão (ex: 'user:*')
+ */
+export async function kvKeys(pattern: string): Promise<string[]> {
+  const result = await upstash([['KEYS', pattern]]);
+  return result[0]?.result || [];
+}
+
+/**
+ * Busca múltiplos valores de uma vez usando pipeline GET
+ */
+export async function kvGetMany(keys: string[]): Promise<any[]> {
+  if (keys.length === 0) return [];
+  const commands = keys.map(k => ['GET', k]);
+  const results = await upstash(commands);
+  
+  return results.map(r => {
+    const raw = r.result;
+    return raw ? JSON.parse(raw) : null;
+  }).filter(v => v !== null);
+}
