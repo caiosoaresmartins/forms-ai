@@ -50,13 +50,8 @@ export async function kvGet(key: string): Promise<any | null> {
  * Define o valor de uma chave
  */
 export async function kvSet(key: string, value: any): Promise<boolean> {
-  try {
-    const serialized = JSON.stringify(value);
-    const result = await upstash([['SET', key, serialized]]);
-    if (result[0]?.error) throw new Error(result[0].error);
-    return true;
-  } catch (err) {
-    console.error(`Erro ao salvar chave ${key}:`, err);
-    return false;
-  }
+  const serialized = JSON.stringify(value);
+  const result = await upstash([['SET', key, serialized]]);
+  if (result[0]?.error) throw new Error(result[0].error);
+  return true;
 }
