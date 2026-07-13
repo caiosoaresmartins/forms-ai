@@ -1,16 +1,90 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { 
   LayoutDashboard, 
   Users, 
   CreditCard, 
-  Settings, 
   Activity,
   LogOut,
-  ShieldAlert
+  ShieldAlert,
+  Lock
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Credenciais solicitadas pelo Caio
+    if (username.trim().toLowerCase() === 'caio felipe' && password === '@122191zX') {
+      setIsAuthenticated(true);
+      setError('');
+    } else {
+      setError('Credenciais inválidas. Tente novamente.');
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center text-zinc-100 font-sans p-6">
+        <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
+          <div className="flex flex-col items-center justify-center mb-8">
+            <div className="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center border border-teal-500/30 mb-4">
+              <Lock className="w-6 h-6 text-teal-400" />
+            </div>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Acesso Restrito</h1>
+            <p className="text-zinc-500 text-sm mt-1">Painel do Gestor Administrativo</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="flex flex-col gap-5">
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5" htmlFor="username">
+                Usuário (Gestor)
+              </label>
+              <input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Ex: Caio felipe"
+                className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5" htmlFor="password">
+                Senha
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all"
+              />
+            </div>
+            {error && (
+              <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                {error}
+              </p>
+            )}
+            <button
+              type="submit"
+              className="w-full bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-lg py-3 text-sm transition-all duration-200 mt-2"
+            >
+              Autenticar
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-zinc-950 flex text-zinc-100 font-sans">
       {/* Sidebar */}
@@ -49,7 +123,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         <div className="p-4 border-t border-zinc-800/60">
-          <button className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 font-medium text-sm transition-colors">
+          <button 
+            onClick={() => setIsAuthenticated(false)}
+            className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 font-medium text-sm transition-colors"
+          >
             <LogOut className="w-4 h-4" />
             Sair do Painel
           </button>
@@ -63,10 +140,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-2 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Sistemas Operacionais
+              Acesso Seguro
             </span>
-            <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">
-              CS
+            <div className="w-8 h-8 rounded-full bg-teal-600 border border-teal-500 flex items-center justify-center text-xs font-bold text-white shadow-lg">
+              CF
             </div>
           </div>
         </div>
