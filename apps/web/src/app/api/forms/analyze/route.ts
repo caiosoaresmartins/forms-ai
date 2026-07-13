@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import pdfParse from 'pdf-parse';
 
 export async function POST(req: Request) {
   try {
@@ -9,18 +10,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ detail: 'Nenhum arquivo enviado.' }, { status: 400 });
     }
 
-    // Converte o arquivo para Base64 para envio direto ao Gemini
+    // Extrai texto do PDF usando pdf-parse
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const base64Pdf = buffer.toString('base64');
+    
+    let pdfText = "";
+    try {
+      const pdfData = await pdfParse(buffer);
+      pdfText = pdfData.text.trim();
+    } catch (err: any) {
+      console.error("Erro no pdf-parse:", err.message);
+      return NextResponse.json({ detail: 'Erro ao tentar ler as palavras do PDF. Certifique-se de que não é um arquivo escaneado (imagem).' }, { status: 400 });
+    }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    if (!pdfText) {
+      return NextResponse.json({ detail: 'Nenhum texto encontrado no PDF. O Perplexity não suporta PDFs de imagens/scanners.' }, { status: 400 });
+    }
+
+    const apiKey = process.env.PERPLEXITY_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ detail: 'GEMINI_API_KEY não configurada no servidor.' }, { status: 500 });
+      return NextResponse.json({ detail: 'PERPLEXITY_API_KEY não configurada no servidor.' }, { status: 500 });
     }
 
     const prompt = `Você é um assistente jurídico especializado em Due Diligence e análise de contratos e formulários imobiliários/jurídicos.
-Sua tarefa é analisar o documento PDF anexado (mesmo que seja escaneado, use sua visão computacional para ler) e extrair as partes envolvidas (clientes, empresas, requerentes, etc.) e identificar a lista de documentos necessários para cada uma dessas partes.
+Sua tarefa é analisar o texto extraído do documento abaixo e extrair as partes envolvidas (clientes, empresas, requerentes, etc.) e identificar a lista de documentos necessários para cada uma dessas partes.
 
 Extraia os dados EXATAMENTE no seguinte formato JSON puro, sem marcações markdown:
 {
@@ -41,56 +54,47 @@ Extraia os dados EXATAMENTE no seguinte formato JSON puro, sem marcações markd
   ]
 }
 
-Retorne SOMENTE o objeto JSON puro e válido. Não adicione nenhum outro texto, nem markdown.`;
+Retorne SOMENTE o objeto JSON puro e válido. Não adicione nenhum outro texto, nem markdown.
 
-    // Modelos confirmados como disponíveis para esta API Key (testados via REST)
-    const MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite"];
+--- TEXTO DO DOCUMENTO ---
+${pdfText.substring(0, 30000)} // Limite de segurança de caracteres
+`;
 
     const requestBody = {
-      contents: [{
-        role: "user",
-        parts: [
-          { text: prompt },
-          { inlineData: { mimeType: "application/pdf", data: base64Pdf } }
-        ]
-      }]
+      model: "sonar-pro",
+      messages: [
+        {
+          role: "system",
+          content: "Você é uma API estrita de extração de dados JSON. Retorne apenas JSON válido conforme requisitado, sem absolutamente nenhum texto extra."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.1
     };
 
-    let responseText = "";
-    let lastError = "";
+    const res = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(requestBody)
+    });
 
-    for (const modelName of MODELS) {
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-        });
-
-        if (!res.ok) {
-          const errBody = await res.text();
-          lastError = `${modelName}: ${res.status} - ${errBody.substring(0, 200)}`;
-          console.warn(`Modelo ${modelName} falhou: ${res.status}`);
-          continue; // tenta o próximo modelo
-        }
-
-        const data = await res.json();
-        responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        
-        if (responseText) {
-          console.log(`Modelo ${modelName} respondeu com sucesso.`);
-          break; // sucesso, sai do loop
-        }
-      } catch (e: any) {
-        lastError = `${modelName}: ${e.message}`;
-        console.warn(`Exceção no modelo ${modelName}:`, e.message);
-        continue;
-      }
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error("Perplexity API error:", res.status, errBody);
+      throw new Error(`Erro na API do Perplexity: ${res.status}`);
     }
 
+    const data = await res.json();
+    const responseText = data?.choices?.[0]?.message?.content || "";
+
     if (!responseText) {
-      throw new Error(`Nenhum modelo conseguiu processar o PDF. Último erro: ${lastError}`);
+      throw new Error("O modelo do Perplexity não retornou texto.");
     }
 
     // Limpa possíveis marcações markdown da resposta
@@ -100,7 +104,7 @@ Retorne SOMENTE o objeto JSON puro e válido. Não adicione nenhum outro texto, 
       const parsedData = JSON.parse(cleanJson);
       return NextResponse.json(parsedData, { status: 200 });
     } catch {
-      console.error("JSON inválido retornado pelo Gemini:", cleanJson.substring(0, 500));
+      console.error("JSON inválido retornado pelo Perplexity:", cleanJson.substring(0, 500));
       return NextResponse.json({ detail: 'O modelo de IA não retornou um JSON válido. Tente novamente.' }, { status: 500 });
     }
 
