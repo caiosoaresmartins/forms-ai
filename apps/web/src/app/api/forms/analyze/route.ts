@@ -27,15 +27,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ detail: 'Nenhum texto encontrado no PDF. O Perplexity não suporta PDFs de imagens/scanners.' }, { status: 400 });
     }
 
-    const apiKey = process.env.PERPLEXITY_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ detail: 'PERPLEXITY_API_KEY não configurada no servidor.' }, { status: 500 });
+      return NextResponse.json({ detail: 'GROQ_API_KEY não configurada no servidor.' }, { status: 500 });
     }
 
     const prompt = `Você é um assistente jurídico especializado em Due Diligence e análise de contratos e formulários imobiliários/jurídicos.
 Sua tarefa é analisar o texto extraído do documento abaixo e extrair as partes envolvidas (clientes, empresas, requerentes, etc.) e identificar a lista de documentos necessários para cada uma dessas partes.
 
-Extraia os dados EXATAMENTE no seguinte formato JSON puro, sem marcações markdown:
+Extraia os dados EXATAMENTE no seguinte formato JSON puro:
 {
   "parties": [
     {
@@ -54,28 +54,27 @@ Extraia os dados EXATAMENTE no seguinte formato JSON puro, sem marcações markd
   ]
 }
 
-Retorne SOMENTE o objeto JSON puro e válido. Não adicione nenhum outro texto, nem markdown.
-
 --- TEXTO DO DOCUMENTO ---
 ${pdfText.substring(0, 30000)} // Limite de segurança de caracteres
 `;
 
     const requestBody = {
-      model: "sonar-pro",
+      model: "llama-3.1-70b-versatile",
       messages: [
         {
           role: "system",
-          content: "Você é uma API estrita de extração de dados JSON. Retorne apenas JSON válido conforme requisitado, sem absolutamente nenhum texto extra."
+          content: "Você é uma API estrita de extração de dados JSON. Retorne apenas JSON válido conforme requisitado, garantindo que a resposta comece e termine com chaves {}."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      temperature: 0.1
+      temperature: 0.1,
+      response_format: { type: "json_object" }
     };
 
-    const res = await fetch("https://api.perplexity.ai/chat/completions", {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
@@ -86,8 +85,8 @@ ${pdfText.substring(0, 30000)} // Limite de segurança de caracteres
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.error("Perplexity API error:", res.status, errBody);
-      throw new Error(`Erro na API do Perplexity: ${res.status}`);
+      console.error("Groq API error:", res.status, errBody);
+      throw new Error(`Erro na API do Groq: ${res.status}`);
     }
 
     const data = await res.json();
