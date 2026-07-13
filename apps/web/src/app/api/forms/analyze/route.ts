@@ -35,8 +35,8 @@ export async function POST(req: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Usando gemini-1.5-flash por ser rápido e mais barato para extração JSON
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Usando gemini-1.5-flash-latest por causa da versão v1beta
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
     const prompt = `
 Você é um assistente jurídico especializado em Due Diligence e análise de contratos e formulários imobiliários/jurídicos.
