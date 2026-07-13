@@ -4,18 +4,40 @@ import React, { useState, useEffect } from 'react';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminRole, setAdminRole] = useState<'SUPER_ADMIN' | 'ADMIN' | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeView, setActiveView] = useState('view-dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState<{id: number, message: string}[]>([]);
+  
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [error, setError] = useState('');
 
-  // Carrega estado do localStorage (se o gestor já tinha entrado)
+  // Estados dos Modais
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+
+  // Dados Mockados para interatividade
+  const [clients, setClients] = useState([
+    { id: '#T-0012', name: 'Eurostock Imóveis', plan: 'Enterprise', quota: 68, status: 'Ativo', inactiveDays: 2 },
+    { id: '#T-0009', name: 'Prime Seguros', plan: 'Pro', quota: 91, status: 'Ativo', inactiveDays: 0 },
+    { id: '#T-0007', name: 'Vertix Consultoria', plan: 'Starter', quota: 44, status: 'Inadimplente', inactiveDays: 8 },
+    { id: '#T-0021', name: 'Fusion Corretora', plan: 'Pro', quota: 30, status: 'Pausado', inactiveDays: 14 },
+    { id: '#T-0018', name: 'Nexo Gestão', plan: 'Enterprise', quota: 100, status: 'Ativo', inactiveDays: 1 }
+  ]);
+
+  const [admins, setAdmins] = useState([
+    { id: '1', name: 'Caio Felipe', email: 'caio felipe', role: 'SUPER_ADMIN', status: 'Ativo' },
+    { id: '2', name: 'João Silva', email: 'joao.silva@forms.ai', role: 'ADMIN', status: 'Ativo' }
+  ]);
+
+  // Carrega estado do localStorage
   useEffect(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('admin_auth') === 'true') {
       setIsAuthenticated(true);
+      const role = localStorage.getItem('admin_role') as 'SUPER_ADMIN' | 'ADMIN' | null;
+      setAdminRole(role || 'ADMIN');
       setTimeout(animateQuotaBars, 100);
     }
   }, []);
@@ -24,11 +46,16 @@ export default function AdminPage() {
     setError('');
     setLoading(true);
     setTimeout(() => {
-      const isGestor = adminEmail.trim().toLowerCase() === 'caio felipe' || adminEmail.trim() === ''; // fallback se estiver vazio
-      const isSenhaValida = adminPassword.trim() === '@122191zX' || adminPassword.trim().toLowerCase().includes('@122191zx') || adminPassword.trim() === '' || adminPassword.trim() === 'password123';
+      const isSuperAdmin = adminEmail.trim().toLowerCase() === 'caio felipe';
+      // Permite entrada como SUPER_ADMIN se for caio felipe, ou ADMIN se for outro e a senha for válida
+      // Senha mockada super permissiva para facilitar o teste:
+      const isSenhaValida = adminPassword.trim() === '@122191zX' || adminPassword.trim().toLowerCase().includes('122191') || adminPassword.trim().length >= 4 || adminPassword.trim() === '';
       
-      if (isGestor && isSenhaValida) {
+      if (isSenhaValida) {
+        const roleToSet = isSuperAdmin ? 'SUPER_ADMIN' : 'ADMIN';
         localStorage.setItem('admin_auth', 'true');
+        localStorage.setItem('admin_role', roleToSet);
+        setAdminRole(roleToSet);
         setIsAuthenticated(true);
         setLoading(false);
         setTimeout(animateQuotaBars, 100);
@@ -41,7 +68,9 @@ export default function AdminPage() {
 
   const handleLogout = () => {
     localStorage.removeItem('admin_auth');
+    localStorage.removeItem('admin_role');
     setIsAuthenticated(false);
+    setAdminRole(null);
   };
 
   const showToast = (message: string) => {
@@ -66,6 +95,26 @@ export default function AdminPage() {
     if (window.innerWidth <= 900) {
       setSidebarOpen(false);
     }
+    if (view === 'view-dashboard') {
+      setTimeout(animateQuotaBars, 100);
+    }
+  };
+
+  const changeClientStatus = (id: string, newStatus: string) => {
+    setClients(clients.map(c => c.id === id ? { ...c, status: newStatus } : c));
+    showToast(`Status do cliente atualizado para: ${newStatus}`);
+  };
+
+  const handleNewClientSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowClientModal(false);
+    showToast('Novo cliente cadastrado com sucesso!');
+  };
+
+  const handleNewAdminSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowAdminModal(false);
+    showToast('Novo administrador adicionado à equipe!');
   };
 
   if (!isAuthenticated) {
@@ -108,9 +157,10 @@ export default function AdminPage() {
   const getTopbarTitle = () => {
     switch (activeView) {
       case 'view-dashboard': return 'Dashboard Executivo';
-      case 'view-clients': return 'Clientes (Tenants)';
+      case 'view-clients': return 'Gestão de Clientes (Tenants)';
       case 'view-billing': return 'Faturação';
       case 'view-usage': return 'Log de IA (Tokens)';
+      case 'view-admins': return 'Gestão da Equipe (Admins)';
       default: return 'Dashboard';
     }
   };
@@ -142,6 +192,16 @@ export default function AdminPage() {
             </svg>
             Clientes (Tenants)
           </div>
+
+          {adminRole === 'SUPER_ADMIN' && (
+            <div className={`nav-item ${activeView === 'view-admins' ? 'active' : ''}`} onClick={() => handleNavClick('view-admins')}>
+              <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/><path d="M18 22H6c-2 0-3-1-3-3a8 8 0 0 1 14 0c0 2-1 3-3 3z"/>
+                <path d="M19 8v4M17 10h4" />
+              </svg>
+              Equipe (Admins)
+            </div>
+          )}
           
           <div className={`nav-item ${activeView === 'view-billing' ? 'active' : ''}`} onClick={() => handleNavClick('view-billing')}>
             <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -167,7 +227,7 @@ export default function AdminPage() {
           </button>
         </div>
       </nav>
-
+      
       {/* ÁREA PRINCIPAL */}
       <div className="main-wrapper">
         
@@ -185,9 +245,9 @@ export default function AdminPage() {
           <div className="topbar-right">
             <div className="secure-tag">
               <div className="pulse-dot"></div>
-              Ligação Segura
+              {adminRole === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}
             </div>
-            <div className="avatar-cf" title="Perfil do Administrador">CF</div>
+            <div className="avatar-cf" title="Perfil">{adminRole === 'SUPER_ADMIN' ? 'CF' : 'AD'}</div>
           </div>
         </header>
 
@@ -201,24 +261,39 @@ export default function AdminPage() {
                 <h1 className="page-title"><span className="gradient-text">Resumo Galáctico</span></h1>
                 <p className="page-sub">Visão geral da infraestrutura Forms AI · Julho 2026</p>
               </div>
-              <button className="btn-action" id="btn-email" onClick={() => showToast("Aviso por e-mail disparado para os Administradores.")}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
-                Disparar Aviso Geral
-              </button>
+              {adminRole === 'SUPER_ADMIN' && (
+                <button className="btn-action" onClick={() => showToast("Aviso por e-mail disparado para os Administradores.")}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                  Disparar Aviso Geral
+                </button>
+              )}
             </div>
 
             {/* Cartões KPI */}
             <div className="kpi-grid">
-              <div className="card kpi-card violet">
-                <div className="kpi-header">
-                  <span className="kpi-label">Receita Recorrente</span>
-                  <div className="kpi-icon violet">💰</div>
+              
+              {/* Card condicional: Receita (Só Super Admin) ou Vendas (Admins) */}
+              {adminRole === 'SUPER_ADMIN' ? (
+                <div className="card kpi-card violet">
+                  <div className="kpi-header">
+                    <span className="kpi-label">Receita Recorrente</span>
+                    <div className="kpi-icon violet">💰</div>
+                  </div>
+                  <div className="kpi-value">R$ 14.500</div>
+                  <span className="kpi-trend up">↑ +12,5% este mês</span>
                 </div>
-                <div className="kpi-value">R$ 14.500</div>
-                <span className="kpi-trend up">↑ +12,5% este mês</span>
-              </div>
+              ) : (
+                <div className="card kpi-card violet">
+                  <div className="kpi-header">
+                    <span className="kpi-label">Número de Vendas</span>
+                    <div className="kpi-icon violet">🚀</div>
+                  </div>
+                  <div className="kpi-value">142</div>
+                  <span className="kpi-trend up">↑ +5 assinaturas hoje</span>
+                </div>
+              )}
               
               <div className="card kpi-card cyan">
                 <div className="kpi-header">
@@ -268,36 +343,18 @@ export default function AdminPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td><div className="tenant-name">Eurostock Imóveis</div><div className="tenant-id">#T-0012</div></td>
-                        <td><span className="plan-badge enterprise">Enterprise</span></td>
-                        <td><div className="quota-bar"><div className="quota-track"><div className="quota-fill ok" style={{width: '68%'}}></div></div><span className="quota-pct">68%</span></div></td>
-                        <td><span className="status-pill active"><span className="status-dot"></span>Ativo</span></td>
-                      </tr>
-                      <tr>
-                        <td><div className="tenant-name">Prime Seguros</div><div className="tenant-id">#T-0009</div></td>
-                        <td><span className="plan-badge pro">Pro</span></td>
-                        <td><div className="quota-bar"><div className="quota-track"><div className="quota-fill warn" style={{width: '91%'}}></div></div><span className="quota-pct">91%</span></div></td>
-                        <td><span className="status-pill active"><span className="status-dot"></span>Ativo</span></td>
-                      </tr>
-                      <tr>
-                        <td><div className="tenant-name">Vertix Consultoria</div><div className="tenant-id">#T-0007</div></td>
-                        <td><span className="plan-badge starter">Starter</span></td>
-                        <td><div className="quota-bar"><div className="quota-track"><div className="quota-fill ok" style={{width: '44%'}}></div></div><span className="quota-pct">44%</span></div></td>
-                        <td><span className="status-pill overdue"><span className="status-dot"></span>Inadimplente</span></td>
-                      </tr>
-                      <tr>
-                        <td><div className="tenant-name">Fusion Corretora</div><div className="tenant-id">#T-0021</div></td>
-                        <td><span className="plan-badge pro">Pro</span></td>
-                        <td><div className="quota-bar"><div className="quota-track"><div className="quota-fill ok" style={{width: '30%'}}></div></div><span className="quota-pct">30%</span></div></td>
-                        <td><span className="status-pill active"><span className="status-dot"></span>Ativo</span></td>
-                      </tr>
-                      <tr>
-                        <td><div className="tenant-name">Nexo Gestão</div><div className="tenant-id">#T-0018</div></td>
-                        <td><span className="plan-badge enterprise">Enterprise</span></td>
-                        <td><div className="quota-bar"><div className="quota-track"><div className="quota-fill over" style={{width: '100%'}}></div></div><span className="quota-pct">100%</span></div></td>
-                        <td><span className="status-pill active"><span className="status-dot"></span>Ativo</span></td>
-                      </tr>
+                      {clients.slice(0, 5).map(c => (
+                        <tr key={c.id}>
+                          <td><div className="tenant-name">{c.name}</div><div className="tenant-id">{c.id}</div></td>
+                          <td><span className={`plan-badge ${c.plan.toLowerCase()}`}>{c.plan}</span></td>
+                          <td><div className="quota-bar"><div className="quota-track"><div className={`quota-fill ${c.quota > 90 ? 'over' : c.quota > 75 ? 'warn' : 'ok'}`} style={{width: `${c.quota}%`}}></div></div><span className="quota-pct">{c.quota}%</span></div></td>
+                          <td>
+                            <span className={`status-pill ${c.status === 'Ativo' ? 'active' : 'overdue'}`}>
+                              <span className="status-dot"></span>{c.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -307,24 +364,28 @@ export default function AdminPage() {
               <div className="card">
                 <div className="card-header">
                   <span className="card-title">Eventos do Sistema</span>
-                  <span className="badge">3 Novos</span>
+                  <span className="badge">Novos Alertas</span>
                 </div>
                 <div className="notif-list">
+                  
+                  {/* ALERTA DE INATIVIDADE REQUERIDO PELO USER */}
+                  {clients.some(c => c.inactiveDays > 7) && (
+                    <div className="notif-item amber">
+                      <div className="notif-emoji">⚠️</div>
+                      <div className="notif-content">
+                        <div className="notif-title">Alerta de Inatividade</div>
+                        <div className="notif-desc">Existem clientes que não acessam o sistema há mais de 7 dias. Verifique a aba de Tenants.</div>
+                        <div className="notif-time">Agora mesmo</div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="notif-item red">
                     <div className="notif-emoji">🚨</div>
                     <div className="notif-content">
                       <div className="notif-title">Cota de Tokens Excedida</div>
                       <div className="notif-desc">O tenant "Nexo Gestão" atingiu 100% do limite de tokens de IA para o ciclo atual.</div>
                       <div className="notif-time">Há 12 minutos</div>
-                    </div>
-                  </div>
-                  
-                  <div className="notif-item amber">
-                    <div className="notif-emoji">⚠️</div>
-                    <div className="notif-content">
-                      <div className="notif-title">Pico de Processamento</div>
-                      <div className="notif-desc">Latência na API OpenAI aumentou para 1.2s nos últimos 5 minutos. Monitorização ativa.</div>
-                      <div className="notif-time">Há 1 hora</div>
                     </div>
                   </div>
                   
@@ -347,15 +408,106 @@ export default function AdminPage() {
             <div className="page-header">
               <div>
                 <h1 className="page-title">Gestão de <span className="gradient-text">Tenants</span></h1>
-                <p className="page-sub">Controle de acesso e configurações por empresa.</p>
+                <p className="page-sub">Cadastro manual, bloqueios e controle de acessos.</p>
+              </div>
+              <button className="btn-action" onClick={() => setShowClientModal(true)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Cadastrar Novo Cliente
+              </button>
+            </div>
+            
+            <div className="card">
+              <div className="table-container">
+                <table className="clients-table">
+                  <thead>
+                    <tr>
+                      <th>Empresa</th>
+                      <th>Último Acesso</th>
+                      <th>Plano</th>
+                      <th>Estado</th>
+                      <th>Ações Rápidas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clients.map(c => (
+                      <tr key={c.id}>
+                        <td><div className="tenant-name">{c.name}</div><div className="tenant-id">{c.id}</div></td>
+                        <td>
+                          {c.inactiveDays === 0 ? 'Hoje' : c.inactiveDays > 7 ? (
+                            <span style={{ color: 'var(--color-error)' }}>Há {c.inactiveDays} dias ⚠️</span>
+                          ) : (
+                            <span style={{ color: 'var(--color-text-faint)' }}>Há {c.inactiveDays} dias</span>
+                          )}
+                        </td>
+                        <td><span className={`plan-badge ${c.plan.toLowerCase()}`}>{c.plan}</span></td>
+                        <td>
+                          <span className={`status-pill ${c.status === 'Ativo' ? 'active' : 'overdue'}`}>
+                            <span className="status-dot"></span>{c.status}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button onClick={() => changeClientStatus(c.id, 'Ativo')} title="Ativar" style={{ padding: '6px', borderRadius: '6px', background: 'rgba(52,211,153,0.1)', color: 'var(--color-success)', cursor: 'pointer', border: '1px solid rgba(52,211,153,0.2)' }}>▶️</button>
+                            <button onClick={() => changeClientStatus(c.id, 'Pausado')} title="Pausar" style={{ padding: '6px', borderRadius: '6px', background: 'rgba(251,191,36,0.1)', color: 'var(--color-warning)', cursor: 'pointer', border: '1px solid rgba(251,191,36,0.2)' }}>⏸️</button>
+                            <button onClick={() => changeClientStatus(c.id, 'Bloqueado')} title="Bloquear" style={{ padding: '6px', borderRadius: '6px', background: 'rgba(248,113,113,0.1)', color: 'var(--color-error)', cursor: 'pointer', border: '1px solid rgba(248,113,113,0.2)' }}>🛑</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-            <div className="placeholder-box">
-              <div className="placeholder-icon">🏢</div>
-              <h3>Módulo de Clientes</h3>
-              <p>Interface avançada para gestão de subscrições, limites de API, acesso a formulários customizados e auditoria de cada tenant.</p>
-            </div>
           </div>
+
+          {/* ======= VISTA: ADMINS (Só Super Admin) ======= */}
+          {adminRole === 'SUPER_ADMIN' && (
+            <div className={`content-view ${activeView === 'view-admins' ? 'active' : ''}`} id="view-admins">
+              <div className="page-header">
+                <div>
+                  <h1 className="page-title">Gestão da <span className="gradient-text">Equipe</span></h1>
+                  <p className="page-sub">Controle quem tem acesso ao painel de administração.</p>
+                </div>
+                <button className="btn-action" onClick={() => setShowAdminModal(true)}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Adicionar Admin
+                </button>
+              </div>
+              
+              <div className="card">
+                <div className="table-container">
+                  <table className="clients-table">
+                    <thead>
+                      <tr>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>Nível de Acesso</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {admins.map(a => (
+                        <tr key={a.id}>
+                          <td><div className="tenant-name">{a.name}</div></td>
+                          <td><div style={{ color: 'var(--color-text-muted)' }}>{a.email}</div></td>
+                          <td><span className={`plan-badge ${a.role === 'SUPER_ADMIN' ? 'enterprise' : 'pro'}`}>{a.role}</span></td>
+                          <td>
+                            {a.role !== 'SUPER_ADMIN' && (
+                              <button onClick={() => showToast(`Usuário ${a.name} bloqueado.`)} style={{ padding: '6px 12px', borderRadius: '6px', background: 'rgba(248,113,113,0.1)', color: 'var(--color-error)', cursor: 'pointer', border: '1px solid rgba(248,113,113,0.2)', fontSize: '0.8rem', fontWeight: 600 }}>Revogar Acesso</button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ======= VISTA: FATURAÇÃO ======= */}
           <div className={`content-view ${activeView === 'view-billing' ? 'active' : ''}`} id="view-billing">
@@ -368,7 +520,11 @@ export default function AdminPage() {
             <div className="placeholder-box">
               <div className="placeholder-icon">💳</div>
               <h3>Módulo Financeiro</h3>
-              <p>Integração com Stripe, emissão de faturas automáticas, gestão de pagamentos falhados (churn) e métricas de MRR/ARR.</p>
+              {adminRole === 'SUPER_ADMIN' ? (
+                <p>Integração com Stripe, emissão de faturas automáticas, gestão de pagamentos falhados (churn) e métricas de MRR/ARR.</p>
+              ) : (
+                <p>Você não tem permissão para visualizar dados financeiros.</p>
+              )}
             </div>
           </div>
 
@@ -388,6 +544,66 @@ export default function AdminPage() {
           </div>
 
         </main>
+      </div>
+
+      {/* MODAL: CADASTRAR CLIENTE */}
+      <div className={`modal-overlay ${showClientModal ? 'open' : ''}`}>
+        <div className="modal-content">
+          <div className="modal-header">
+            <h3 className="modal-title">Novo Cliente (Tenant)</h3>
+            <button className="btn-close" onClick={() => setShowClientModal(false)}>✕</button>
+          </div>
+          <form onSubmit={handleNewClientSubmit}>
+            <div className="form-group">
+              <label className="form-label">Nome da Empresa</label>
+              <input type="text" className="form-input" required placeholder="Ex: Imobiliária XYZ" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">E-mail Principal</label>
+              <input type="email" className="form-input" required placeholder="contato@empresa.com" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Plano</label>
+              <select className="form-input" style={{ appearance: 'none', background: 'rgba(0,0,0,0.4)' }}>
+                <option value="starter">Starter</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
+            <div className="form-actions">
+              <button type="button" className="btn-secondary" onClick={() => setShowClientModal(false)}>Cancelar</button>
+              <button type="submit" className="btn-primary" style={{ margin: 0, width: 'auto' }}>Cadastrar Cliente</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* MODAL: CADASTRAR ADMIN */}
+      <div className={`modal-overlay ${showAdminModal ? 'open' : ''}`}>
+        <div className="modal-content">
+          <div className="modal-header">
+            <h3 className="modal-title">Novo Administrador</h3>
+            <button className="btn-close" onClick={() => setShowAdminModal(false)}>✕</button>
+          </div>
+          <form onSubmit={handleNewAdminSubmit}>
+            <div className="form-group">
+              <label className="form-label">Nome Completo</label>
+              <input type="text" className="form-input" required placeholder="Ex: Lucas Silva" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">E-mail de Acesso</label>
+              <input type="email" className="form-input" required placeholder="lucas@forms.ai" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Senha Provisória</label>
+              <input type="password" className="form-input" required placeholder="••••••••" />
+            </div>
+            <div className="form-actions">
+              <button type="button" className="btn-secondary" onClick={() => setShowAdminModal(false)}>Cancelar</button>
+              <button type="submit" className="btn-primary" style={{ margin: 0, width: 'auto' }}>Criar Acesso</button>
+            </div>
+          </form>
+        </div>
       </div>
       
       {/* TOASTS */}

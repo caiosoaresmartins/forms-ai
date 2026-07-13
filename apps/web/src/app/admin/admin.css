@@ -474,3 +474,16 @@
   .kpi-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 500px) { .kpi-grid { grid-template-columns: 1fr; } }
+
+/* MODAIS */
+.modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(5, 5, 16, 0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity var(--transition); }
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal-content { background: var(--color-surface); border: 1px solid var(--color-border-bright); border-radius: var(--radius-xl); padding: var(--space-6) var(--space-8); width: min(500px, 90vw); box-shadow: var(--shadow-md), var(--shadow-glow); transform: translateY(20px); transition: transform var(--transition); }
+.modal-overlay.open .modal-content { transform: translateY(0); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-6); }
+.modal-title { font-size: var(--text-lg); font-weight: 700; color: #fff; }
+.btn-close { color: var(--color-text-muted); padding: var(--space-2); border-radius: var(--radius-md); transition: background var(--transition); }
+.btn-close:hover { background: rgba(255,255,255,0.05); color: #fff; }
+.form-actions { display: flex; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-8); }
+.btn-secondary { background: rgba(255,255,255,0.05); border: 1px solid var(--color-divider); color: var(--color-text); padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); font-weight: 600; font-size: var(--text-sm); transition: all var(--transition); }
+.btn-secondary:hover { background: rgba(255,255,255,0.1); }
