@@ -18,19 +18,9 @@ export default function AdminPage() {
   const [showClientModal, setShowClientModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
 
-  // Dados Mockados para interatividade
-  const [clients, setClients] = useState([
-    { id: '#T-0012', name: 'Eurostock Imóveis', plan: 'Enterprise', quota: 68, status: 'Ativo', inactiveDays: 2 },
-    { id: '#T-0009', name: 'Prime Seguros', plan: 'Pro', quota: 91, status: 'Ativo', inactiveDays: 0 },
-    { id: '#T-0007', name: 'Vertix Consultoria', plan: 'Starter', quota: 44, status: 'Inadimplente', inactiveDays: 8 },
-    { id: '#T-0021', name: 'Fusion Corretora', plan: 'Pro', quota: 30, status: 'Pausado', inactiveDays: 14 },
-    { id: '#T-0018', name: 'Nexo Gestão', plan: 'Enterprise', quota: 100, status: 'Ativo', inactiveDays: 1 }
-  ]);
-
-  const [admins, setAdmins] = useState([
-    { id: '1', name: 'Caio Felipe', email: 'caio felipe', role: 'SUPER_ADMIN', status: 'Ativo' },
-    { id: '2', name: 'João Silva', email: 'joao.silva@forms.ai', role: 'ADMIN', status: 'Ativo' }
-  ]);
+  // Dados reais deverão ser buscados da API
+  const [clients, setClients] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<any[]>([]);
 
   // Carrega estado do localStorage
   useEffect(() => {
@@ -42,28 +32,34 @@ export default function AdminPage() {
     }
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setError('');
     setLoading(true);
-    setTimeout(() => {
-      const isSuperAdmin = adminEmail.trim().toLowerCase() === 'caio felipe';
-      // Permite entrada como SUPER_ADMIN se for caio felipe, ou ADMIN se for outro e a senha for válida
-      // Senha mockada super permissiva para facilitar o teste:
-      const isSenhaValida = adminPassword.trim() === '@122191zX' || adminPassword.trim().toLowerCase().includes('122191') || adminPassword.trim().length >= 4 || adminPassword.trim() === '';
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: adminEmail, password: adminPassword })
+      });
+      const data = await res.json();
       
-      if (isSenhaValida) {
-        const roleToSet = isSuperAdmin ? 'SUPER_ADMIN' : 'ADMIN';
-        localStorage.setItem('admin_auth', 'true');
-        localStorage.setItem('admin_role', roleToSet);
-        setAdminRole(roleToSet);
-        setIsAuthenticated(true);
+      if (!res.ok) {
+        setError(data.detail || 'Acesso negado.');
         setLoading(false);
-        setTimeout(animateQuotaBars, 100);
-      } else {
-        setError('Acesso negado. Credenciais incorretas.');
-        setLoading(false);
+        return;
       }
-    }, 1200);
+      
+      const userRole = data.user?.role || 'ADMIN';
+      localStorage.setItem('admin_auth', 'true');
+      localStorage.setItem('admin_role', userRole);
+      setAdminRole(userRole as 'SUPER_ADMIN' | 'ADMIN');
+      setIsAuthenticated(true);
+      setTimeout(animateQuotaBars, 100);
+    } catch(err) {
+      setError('Erro na conexão com o servidor.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = () => {

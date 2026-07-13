@@ -19,17 +19,35 @@ export function middleware(request: NextRequest) {
   if (
     PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api')
+    pathname.startsWith('/api/auth') // Permite acesso a /api/auth/login e /register
   ) {
     return NextResponse.next()
   }
 
   // Verifica cookie de token (setado após login)
   const token = request.cookies.get('access_token')?.value
+  
   if (!token) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ detail: 'Não autorizado. Token ausente.' }, { status: 401 })
+    }
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
+  }
+
+  try {
+    // Valida criptograficamente o JWT gerado no login
+    const { jwtVerify } = await import('jose')
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_secret_for_local_dev')
+    await jwtVerify(token, secret)
+  } catch (err) {
+    // Token inválido ou expirado
+    request.cookies.delete('access_token')
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ detail: 'Não autorizado. Token inválido.' }, { status: 401 })
+    }
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return NextResponse.next()

@@ -20,7 +20,7 @@ export async function POST(req: Request) {
 
     // Criando um Salt (tempero criptográfico) para blindar a senha contra Rainbow Tables
     const salt = crypto.randomBytes(16).toString('hex');
-    const passwordHash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+    const passwordHash = crypto.pbkdf2Sync(password, salt, 210000, 64, 'sha512').toString('hex');
 
     const newUser = {
       id: crypto.randomUUID(),

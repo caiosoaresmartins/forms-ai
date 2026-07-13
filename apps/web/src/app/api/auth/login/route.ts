@@ -21,17 +21,39 @@ export async function POST(req: Request) {
     // Se o usuário for antigo (sem salt), cai no hash antigo (backward compatibility)
     let passwordHash = '';
     if (user.salt) {
-      passwordHash = crypto.pbkdf2Sync(password, user.salt, 1000, 64, 'sha512').toString('hex');
+      // Usando 210.000 iterações (Padrão de segurança) e fallback para 1000 se for conta legado
+      // Como não sabemos quantas iterações a conta antiga tem, tentamos 210000 primeiro. 
+      // Idealmente, adicionaríamos um campo de iteração no banco. Por agora, vamos verificar 1000.
+      passwordHash = crypto.pbkdf2Sync(password, user.salt, 210000, 64, 'sha512').toString('hex');
+      
+      if (user.password !== passwordHash) {
+        // Tentativa de fallback para contas criadas antes da atualização de segurança (1000 iterações)
+        const oldHash = crypto.pbkdf2Sync(password, user.salt, 1000, 64, 'sha512').toString('hex');
+        if (user.password !== oldHash) {
+          return NextResponse.json({ detail: 'Credenciais inválidas.' }, { status: 401 });
+        }
+      }
     } else {
       passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+      if (user.password !== passwordHash) {
+        return NextResponse.json({ detail: 'Credenciais inválidas.' }, { status: 401 });
+      }
     }
 
-    if (user.password !== passwordHash) {
-      return NextResponse.json({ detail: 'Credenciais inválidas.' }, { status: 401 });
-    }
-
-    // Gerando um token simples para a sessão
-    const accessToken = Buffer.from(`${user.email}:${Date.now()}`).toString('base64');
+    // Gerando um JWT seguro usando 'jose'
+    const { SignJWT } = await import('jose');
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_secret_for_local_dev');
+    
+    const accessToken = await new SignJWT({
+      email: user.email,
+      name: user.full_name,
+      tenant: user.tenant_name,
+      role: user.role
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('7d')
+      .sign(secret);
 
     const response = NextResponse.json({
       access_token: accessToken,
