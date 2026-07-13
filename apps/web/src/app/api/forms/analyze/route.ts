@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(req: Request) {
   try {
@@ -9,7 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ detail: 'Nenhum arquivo enviado.' }, { status: 400 });
     }
 
-    // Converte o arquivo para Base64 para envio nativo ao Gemini
+    // Converte o arquivo para Base64
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const base64Pdf = buffer.toString('base64');
@@ -18,6 +19,8 @@ export async function POST(req: Request) {
     if (!apiKey) {
       return NextResponse.json({ detail: 'GEMINI_API_KEY não configurada no servidor.' }, { status: 500 });
     }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
 
     const prompt = `
 Você é um assistente jurídico especializado em Due Diligence e análise de contratos e formulários imobiliários/jurídicos.
@@ -45,42 +48,33 @@ Extraia os dados EXATAMENTE no seguinte formato JSON puro, sem marcações markd
 Retorne SOMENTE o objeto JSON puro e válido. Não adicione nenhum outro texto.
 `;
 
-    // Função auxiliar para chamar a API REST
-    const callGemini = async (modelName: string) => {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ 
-            role: "user", 
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: "application/pdf", data: base64Pdf } }
-            ] 
-          }],
-        })
-      });
-      
-      if (!res.ok) {
-        const errData = await res.text();
-        throw new Error(`${res.status} ${res.statusText} - ${errData}`);
+    const pdfPart = {
+      inlineData: {
+        data: base64Pdf,
+        mimeType: "application/pdf"
       }
-      return await res.json();
     };
 
-    let resultData;
+    let responseText = "";
+
     try {
-      resultData = await callGemini("gemini-1.5-flash");
+      // Tenta primeiro com o flash-latest (muito mais rápido e suporta PDF nativamente)
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+      const result = await model.generateContent([prompt, pdfPart]);
+      responseText = result.response.text();
     } catch (e: any) {
-      console.warn("Falha no gemini-1.5-flash, tentando gemini-1.5-pro...", e.message);
+      console.warn("Falha no gemini-1.5-flash-latest, tentando pro-latest...", e.message);
       try {
-        resultData = await callGemini("gemini-1.5-pro");
+        // Fallback pro caso o flash-latest esteja indisponível
+        const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+        const result = await fallbackModel.generateContent([prompt, pdfPart]);
+        responseText = result.response.text();
       } catch (e2: any) {
-        throw new Error("Ambos os modelos falharam. Erro final: " + e2.message);
+        console.error("Erro no Flash:", e.message, " | Erro no Pro:", e2.message);
+        throw new Error(`O processamento via IA falhou. (Flash: ${e.message})`);
       }
     }
 
-    const responseText = resultData.candidates?.[0]?.content?.parts?.[0]?.text || '';
     let cleanJson = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
     try {
