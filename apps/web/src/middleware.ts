@@ -5,10 +5,15 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/login', '/register', '/favicon.ico']
+const PUBLIC_PATHS = ['/login', '/register', '/favicon.ico', '/admin']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // Redireciona /funcionarios para /admin
+  if (pathname === '/funcionarios') {
+    return NextResponse.redirect(new URL('/admin', request.url))
+  }
 
   // Permite rotas públicas e assets
   if (
