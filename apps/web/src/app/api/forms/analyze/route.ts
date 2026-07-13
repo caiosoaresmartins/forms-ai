@@ -32,8 +32,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ detail: 'GROQ_API_KEY não configurada no servidor.' }, { status: 500 });
     }
 
-    const prompt = `Você é um assistente jurídico especializado em Due Diligence e análise de contratos e formulários imobiliários/jurídicos.
-Sua tarefa é analisar o texto extraído do documento abaixo e extrair as partes envolvidas (clientes, empresas, requerentes, etc.) e identificar a lista de documentos necessários para cada uma dessas partes.
+    const prompt = `Você é um assistente jurídico especializado em processos de Due Diligence e preenchimento de formulários/contratos.
+O documento abaixo é um formulário ou contrato que precisa ser preenchido. 
+Sua tarefa é analisar os campos em branco e o contexto do documento para identificar:
+1. As partes envolvidas (ex: Proponente, Requerente, Seguradora, Comprador).
+2. A lista exata de documentos comprobatórios ou informações que DEVEM ser solicitados de cada parte para que seja possível preencher este documento corretamente. (Ex: Se pede endereço e renda, exija Comprovante de Residência e Holerite).
 
 Extraia os dados EXATAMENTE no seguinte formato JSON puro:
 {
