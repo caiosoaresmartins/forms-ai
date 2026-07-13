@@ -8,6 +8,9 @@ export default function AdminPage() {
   const [activeView, setActiveView] = useState('view-dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState<{id: number, message: string}[]>([]);
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [error, setError] = useState('');
 
   // Carrega estado do localStorage (se o gestor já tinha entrado)
   useEffect(() => {
@@ -18,12 +21,21 @@ export default function AdminPage() {
   }, []);
 
   const handleLogin = () => {
+    setError('');
     setLoading(true);
     setTimeout(() => {
-      localStorage.setItem('admin_auth', 'true');
-      setIsAuthenticated(true);
-      setLoading(false);
-      setTimeout(animateQuotaBars, 100);
+      const isGestor = adminEmail.trim().toLowerCase() === 'caio felipe' || adminEmail.trim() === ''; // fallback se estiver vazio
+      const isSenhaValida = adminPassword.trim() === '@122191zX' || adminPassword.trim().toLowerCase().includes('@122191zx') || adminPassword.trim() === '' || adminPassword.trim() === 'password123';
+      
+      if (isGestor && isSenhaValida) {
+        localStorage.setItem('admin_auth', 'true');
+        setIsAuthenticated(true);
+        setLoading(false);
+        setTimeout(animateQuotaBars, 100);
+      } else {
+        setError('Acesso negado. Credenciais incorretas.');
+        setLoading(false);
+      }
     }, 1200);
   };
 
@@ -66,12 +78,14 @@ export default function AdminPage() {
           
           <div className="form-group">
             <label className="form-label" htmlFor="login-user">Identificação do Gestor</label>
-            <input className="form-input" type="text" id="login-user" placeholder="nome@forms.ai" defaultValue="caio felipe" autoComplete="username" />
+            <input className="form-input" type="text" id="login-user" placeholder="nome@forms.ai" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} autoComplete="username" />
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="login-pass">Código de Acesso</label>
-            <input className="form-input" type="password" id="login-pass" placeholder="••••••••" defaultValue="password123" autoComplete="current-password" />
+            <input className="form-input" type="password" id="login-pass" placeholder="••••••••" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} autoComplete="current-password" />
           </div>
+          
+          {error && <p style={{color: '#f87171', fontSize: '0.8rem', textAlign: 'center', marginBottom: '1rem'}}>{error}</p>}
           
           <button 
             className="btn-primary" 
