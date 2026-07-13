@@ -38,6 +38,7 @@ export const authApi = {
     full_name?: string
     tenant_name: string
     tenant_slug: string
+    termsAccepted: boolean
   }) => axios.post('/api/auth/register', data),
   me: () => api.get('/auth/me'),
   refresh: (refresh_token: string) => api.post('/auth/refresh', { refresh_token }),

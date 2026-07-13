@@ -18,7 +18,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ detail: 'Credenciais inválidas.' }, { status: 401 });
     }
 
-    const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+    // Se o usuário for antigo (sem salt), cai no hash antigo (backward compatibility)
+    let passwordHash = '';
+    if (user.salt) {
+      passwordHash = crypto.pbkdf2Sync(password, user.salt, 1000, 64, 'sha512').toString('hex');
+    } else {
+      passwordHash = crypto.createHash('sha256').update(password).digest('hex');
+    }
 
     if (user.password !== passwordHash) {
       return NextResponse.json({ detail: 'Credenciais inválidas.' }, { status: 401 });
@@ -27,7 +33,7 @@ export async function POST(req: Request) {
     // Gerando um token simples para a sessão
     const accessToken = Buffer.from(`${user.email}:${Date.now()}`).toString('base64');
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       access_token: accessToken,
       token_type: 'bearer',
       user: {
@@ -37,6 +43,25 @@ export async function POST(req: Request) {
         role: user.role
       }
     });
+
+    // Injetando Cookie HttpOnly super seguro
+    response.cookies.set('access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7 // 1 semana
+    });
+
+    response.cookies.set('admin_role', user.role || 'ADMIN', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7
+    });
+
+    return response;
 
   } catch (error: any) {
     console.error('Erro no Login:', error);
