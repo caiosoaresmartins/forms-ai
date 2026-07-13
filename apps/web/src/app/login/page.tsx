@@ -92,26 +92,45 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    
-    // Login do Gestor
-    const isGestor = email.trim().toLowerCase() === 'caio felipe';
-    const isSenhaValida = password.trim().toLowerCase().includes('122191') || password.trim().length >= 4; // Super permissivo
-    if (isGestor && isSenhaValida) {
-      localStorage.setItem('admin_auth', 'true')
-      router.push('/admin')
-      return
-    }
-
     setLoading(true)
+
     try {
-      const res = await authApi.login(email, password)
-      const { access_token, refresh_token } = res.data
-      localStorage.setItem('access_token', access_token)
-      localStorage.setItem('refresh_token', refresh_token)
-      document.cookie = `access_token=${access_token}; path=/; SameSite=Lax`
-      router.push('/')
-    } catch {
-      setError('E-mail ou senha inválidos.')
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.detail || 'E-mail ou senha inválidos.')
+        setLoading(false)
+        return
+      }
+
+      // O cookie HttpOnly já é setado pela API. Salvamos apenas por compatibilidade local.
+      localStorage.setItem('access_token', data.access_token)
+      
+      const userRole = data.user?.role || 'USER';
+      
+      // Validação de Redirecionamento por Perfil (Impede cliente de cair no /admin)
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectParam = urlParams.get('redirect');
+      
+      if (redirectParam?.startsWith('/admin') || redirectParam?.startsWith('/funcionarios')) {
+        if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
+          localStorage.setItem('admin_auth', 'true')
+          localStorage.setItem('admin_role', userRole)
+          router.push('/admin')
+        } else {
+          // Cliente sem permissão tentou acessar admin, joga para a área de cliente
+          router.push('/')
+        }
+      } else {
+        router.push(redirectParam || '/')
+      }
+    } catch (err) {
+      setError('Erro ao conectar com o servidor.')
     } finally {
       setLoading(false)
     }
