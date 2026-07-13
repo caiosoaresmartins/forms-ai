@@ -92,6 +92,13 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    
+    // Login do Gestor
+    if (email.trim().toLowerCase() === 'caio felipe' && password === '@122191zX') {
+      router.push('/admin')
+      return
+    }
+
     setLoading(true)
     try {
       const res = await authApi.login(email, password)
@@ -185,14 +192,14 @@ export default function LoginPage() {
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div>
                   <label className="block text-xs font-medium text-zinc-400 mb-1.5" htmlFor="email">
-                    E-mail
+                    E-mail ou Usuário
                   </label>
                   <input
                     id="email"
-                    type="email"
+                    type="text"
                     required
-                    autoComplete="email"
-                    placeholder="voce@empresa.com"
+                    autoComplete="username"
+                    placeholder="voce@empresa.com ou funcionário"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-zinc-800/60 border border-zinc-700 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all"
