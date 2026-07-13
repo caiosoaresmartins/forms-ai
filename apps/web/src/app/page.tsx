@@ -17,6 +17,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import * as THREE from 'three';
+import Link from 'next/link';
 
 const initialMockParties = [
   {
@@ -682,12 +683,12 @@ function LandingView({ onGetStarted }: any) {
           Forms<span className="text-zinc-100 font-light">AI</span>
         </div>
         <div className="flex items-center gap-4">
-          <a
+          <Link
             href="/admin"
             className="text-sm font-medium text-zinc-400 hover:text-white px-3 py-2 transition-colors"
           >
             Acesso Funcionário
-          </a>
+          </Link>
           <button 
             onClick={onGetStarted}
             className="text-sm font-medium text-zinc-300 hover:text-white px-5 py-2.5 rounded-full hover:bg-white/5 transition-all border border-transparent hover:border-white/10"
