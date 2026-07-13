@@ -59,7 +59,7 @@ ${pdfText.substring(0, 30000)} // Limite de segurança de caracteres
 `;
 
     const requestBody = {
-      model: "llama-3.1-70b-versatile",
+      model: "llama-3.3-70b-versatile",
       messages: [
         {
           role: "system",
