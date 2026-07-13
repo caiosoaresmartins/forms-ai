@@ -681,12 +681,20 @@ function LandingView({ onGetStarted }: any) {
           <ShieldCheck className="w-8 h-8" strokeWidth={1.5} />
           Forms<span className="text-zinc-100 font-light">AI</span>
         </div>
-        <button 
-          onClick={onGetStarted}
-          className="text-sm font-medium text-zinc-300 hover:text-white px-5 py-2.5 rounded-full hover:bg-white/5 transition-all border border-transparent hover:border-white/10"
-        >
-          Entrar na Conta
-        </button>
+        <div className="flex items-center gap-4">
+          <a
+            href="/admin"
+            className="text-sm font-medium text-zinc-400 hover:text-white px-3 py-2 transition-colors"
+          >
+            Acesso Funcionário
+          </a>
+          <button 
+            onClick={onGetStarted}
+            className="text-sm font-medium text-zinc-300 hover:text-white px-5 py-2.5 rounded-full hover:bg-white/5 transition-all border border-transparent hover:border-white/10"
+          >
+            Entrar na Conta
+          </button>
+        </div>
       </nav>
 
       <div className="w-full max-w-4xl mx-auto text-center mb-20 mt-4 relative">
