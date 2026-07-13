@@ -43,6 +43,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('Erro no Registro:', error);
-    return NextResponse.json({ detail: 'Erro interno ao processar cadastro.' }, { status: 500 });
+    return NextResponse.json({ detail: error.message || 'Erro interno ao processar cadastro.' }, { status: 500 });
   }
 }
