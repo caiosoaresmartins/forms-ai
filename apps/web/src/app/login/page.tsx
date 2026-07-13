@@ -11,7 +11,7 @@ const features = [
       </svg>
     ),
     title: 'Leitura inteligente de PDF',
-    desc: 'OCR avançado com PaddleOCR extrai textos, CPFs, CNPJs e cláusulas de qualquer contrato automaticamente.',
+    desc: 'OCR avançado com PaddleOCR extrai textos, CPFs, CNPJs e campos de qualquer formulário automaticamente.',
   },
   {
     icon: (
@@ -22,7 +22,7 @@ const features = [
       </svg>
     ),
     title: 'Checklist automática com IA',
-    desc: 'O modelo de linguagem analisa o contrato e gera automaticamente a lista de documentos necessários para cada parte.',
+    desc: 'O modelo de linguagem analisa o formulário e gera automaticamente a lista de documentos e informações necessárias.',
   },
   {
     icon: (
@@ -143,14 +143,14 @@ export default function LoginPage() {
               Powered by PaddleOCR + Groq LLaMA 3
             </div>
             <h1 className="text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight mb-6">
-              Contratos preenchidos{' '}
+              Formulários preenchidos{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">
                 automaticamente
               </span>{' '}
               com IA
             </h1>
             <p className="text-zinc-400 text-lg leading-relaxed mb-8 max-w-lg">
-              Envie um PDF, a IA lê as partes, gera a checklist de documentos e devolve o contrato preenchido — em segundos.
+              Envie um PDF, a IA extrai os dados, gera a checklist de documentos e devolve o formulário preenchido — em segundos.
               Sem retrabalho, sem erro manual.
             </p>
             <div className="flex flex-wrap gap-4 mb-10">
@@ -244,7 +244,7 @@ export default function LoginPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <p className="text-teal-400 text-sm font-medium mb-3 tracking-wide uppercase">Funcionalidades</p>
-            <h2 className="text-3xl font-bold text-white">Tudo que você precisa para automatizar contratos</h2>
+            <h2 className="text-3xl font-bold text-white">Tudo que você precisa para automatizar formulários</h2>
             <p className="text-zinc-500 mt-3 max-w-xl mx-auto">Da leitura ao preenchimento, sem nenhum trabalho manual.</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
