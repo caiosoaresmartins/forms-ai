@@ -22,21 +22,21 @@ const initialMockParties = [
   {
     id: 'party-1',
     partyName: "João Silva",
-    role: "Parte Compradora (Pessoa Física)",
+    role: "Requerente (Pessoa Física)",
     documents: [
-      { id: "doc-1", name: "RG ou CNH", status: "pending", reason: "Identificação obrigatória para validar a assinatura do contrato por Pessoa Física (Art. 104 CC)." },
-      { id: "doc-2", name: "Comprovante de Residência", status: "pending", reason: "Necessário para qualificação completa da parte compradora na elaboração da escritura." },
-      { id: "doc-3", name: "Comprovante de Renda", status: "uploaded", reason: "Exigido pela cláusula 4.2 do contrato principal para garantia financeira." }
+      { id: "doc-1", name: "RG ou CNH", status: "pending", reason: "Identificação obrigatória para validar a autenticidade do formulário por Pessoa Física." },
+      { id: "doc-2", name: "Comprovante de Residência", status: "pending", reason: "Necessário para qualificação completa do requerente no sistema." },
+      { id: "doc-3", name: "Comprovante de Renda", status: "uploaded", reason: "Exigido pela seção 4.2 do formulário principal para análise de viabilidade." }
     ]
   },
   {
     id: 'party-2',
     partyName: "TechCorp Imóveis S.A.",
-    role: "Parte Vendedora (Pessoa Jurídica)",
+    role: "Empresa Parceira (Pessoa Jurídica)",
     documents: [
-      { id: "doc-4", name: "Matrícula do Imóvel Atualizada", status: "uploaded", reason: "Fundamental para comprovar a titularidade do imóvel transacionado." },
-      { id: "doc-5", name: "Certidão Negativa de Débitos", status: "pending", reason: "Mitigação de risco trabalhista/tributário ao adquirir bens de Pessoa Jurídica." },
-      { id: "doc-6", name: "Cópia do Contrato Social", status: "pending", reason: "Necessário para validar se os signatários possuem poderes de representação da empresa." }
+      { id: "doc-4", name: "Matrícula do Imóvel Atualizada", status: "uploaded", reason: "Fundamental para comprovar a titularidade do imóvel no formulário." },
+      { id: "doc-5", name: "Certidão Negativa de Débitos", status: "pending", reason: "Mitigação de risco trabalhista/tributário ao associar Pessoa Jurídica." },
+      { id: "doc-6", name: "Cópia do Contrato Social", status: "pending", reason: "Necessário para validar se os signatários possuem poderes de representação da empresa no formulário." }
     ]
   }
 ];
@@ -706,7 +706,7 @@ function LandingView({ onGetStarted }: any) {
         </h1>
         
         <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed font-light drop-shadow-lg">
-          Faça o upload de contratos. Nossa IA interpreta o contexto, identifica as partes e estrutura uma matriz de compliance de forma totalmente autônoma.
+          Faça o upload de formulários. Nossa IA interpreta o contexto, identifica as partes e estrutura uma matriz de validação de forma totalmente autônoma.
         </p>
 
         <button 
@@ -746,7 +746,7 @@ function LandingView({ onGetStarted }: any) {
           </div>
           <h3 className="text-xl font-medium text-zinc-100 mb-3">Matrizes Dinâmicas</h3>
           <p className="text-sm text-zinc-400 leading-relaxed font-light">
-            Chega de formulários estáticos. Se o contrato muda, a interface se adapta gerando novas regras de compliance na hora.
+            Chega de processos engessados. Se o formulário muda, a interface se adapta gerando novas regras de validação na hora.
           </p>
         </div>
       </div>
@@ -924,7 +924,7 @@ function ChecklistPanel({ parties, setParties, formId, addToast }: any) {
             </span>
           </div>
           <h1 className="text-3xl font-semibold text-zinc-100 tracking-tight drop-shadow-sm">Matriz de Documentos</h1>
-          <p className="text-zinc-400 mt-2 max-w-xl font-light">A IA generativa estruturou os requisitos abaixo baseada no contexto do contrato principal.</p>
+          <p className="text-zinc-400 mt-2 max-w-xl font-light">A IA generativa estruturou os requisitos abaixo baseada no contexto do formulário submetido.</p>
         </div>
         
         <div className="bg-zinc-950/50 p-5 rounded-2xl border border-white/10 min-w-[260px] shadow-inner">
