@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import pdfParse from 'pdf-parse';
 
 export async function POST(req: Request) {
   try {
@@ -11,24 +9,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ detail: 'Nenhum arquivo enviado.' }, { status: 400 });
     }
 
-    // Lê o conteúdo do PDF como Buffer (necessário para o pdf-parse no Node.js)
+    // Converte o arquivo para Base64 para envio nativo ao Gemini
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    
-    let pdfText = '';
-    try {
-      const data = await pdfParse(buffer);
-      pdfText = data.text;
-    } catch (parseError: any) {
-      console.error('Erro ao fazer parse do PDF:', parseError);
-      return NextResponse.json({ detail: 'Erro ao extrair texto do PDF. Certifique-se que o arquivo não está corrompido ou protegido.' }, { status: 400 });
-    }
+    const base64Pdf = buffer.toString('base64');
 
-    if (!pdfText.trim()) {
-       return NextResponse.json({ detail: 'Nenhum texto encontrado no PDF. Pode ser um documento escaneado sem OCR.' }, { status: 400 });
-    }
-
-    // Configura o Gemini
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ detail: 'GEMINI_API_KEY não configurada no servidor.' }, { status: 500 });
@@ -36,45 +21,49 @@ export async function POST(req: Request) {
 
     const prompt = `
 Você é um assistente jurídico especializado em Due Diligence e análise de contratos e formulários imobiliários/jurídicos.
-Sua tarefa é analisar o texto do documento fornecido e extrair as partes envolvidas (clientes, empresas, requerentes, etc.) e identificar a lista de documentos necessários para cada uma dessas partes, com base no contexto do contrato.
+Sua tarefa é analisar o documento PDF anexado (mesmo que seja escaneado, use sua visão computacional para ler) e extrair as partes envolvidas (clientes, empresas, requerentes, etc.) e identificar a lista de documentos necessários para cada uma dessas partes.
 
-Extraia os dados EXATAMENTE no seguinte formato JSON, sem marcações markdown como \`\`\`json:
+Extraia os dados EXATAMENTE no seguinte formato JSON puro, sem marcações markdown como \`\`\`json:
 {
   "parties": [
     {
       "id": "gerar_um_id_unico_ex_party_1",
-      "partyName": "Nome da Parte Extratada",
-      "role": "Papel da Parte (ex: Requerente, Vendedor, Empresa Parceira)",
+      "partyName": "Nome da Parte Extraída",
+      "role": "Papel da Parte (ex: Requerente, Vendedor, Empresa)",
       "documents": [
         { 
           "id": "gerar_um_id_unico_ex_doc_1", 
-          "name": "Nome do Documento (ex: RG, Matrícula do Imóvel)", 
+          "name": "Nome do Documento (ex: RG, Matrícula)", 
           "status": "pending", 
-          "reason": "Explicação jurídica do porquê este documento é exigido pelo contrato ou pela lei." 
+          "reason": "Explicação jurídica do porquê este documento é exigido." 
         }
       ]
     }
   ]
 }
 
-Se o texto do documento não mencionar partes claras, crie uma estrutura baseada no que conseguir inferir.
-Retorne SOMENTE o objeto JSON puro e válido.
-
-TEXTO DO DOCUMENTO:
-${pdfText}
+Retorne SOMENTE o objeto JSON puro e válido. Não adicione nenhum outro texto.
 `;
 
-    // Função auxiliar para tentar modelos diferentes
+    // Função auxiliar para chamar a API REST
     const callGemini = async (modelName: string) => {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          contents: [{ 
+            role: "user", 
+            parts: [
+              { text: prompt },
+              { inline_data: { mime_type: "application/pdf", data: base64Pdf } }
+            ] 
+          }],
         })
       });
+      
       if (!res.ok) {
-        throw new Error(`${res.status} ${res.statusText} (${modelName})`);
+        const errData = await res.text();
+        throw new Error(`${res.status} ${res.statusText} - ${errData}`);
       }
       return await res.json();
     };
@@ -82,26 +71,24 @@ ${pdfText}
     let resultData;
     try {
       resultData = await callGemini("gemini-1.5-flash");
-    } catch (e) {
-      console.warn("Falha no gemini-1.5-flash, tentando gemini-pro...", e);
+    } catch (e: any) {
+      console.warn("Falha no gemini-1.5-flash, tentando gemini-1.5-pro...", e.message);
       try {
-        resultData = await callGemini("gemini-pro");
+        resultData = await callGemini("gemini-1.5-pro");
       } catch (e2: any) {
         throw new Error("Ambos os modelos falharam. Erro final: " + e2.message);
       }
     }
 
     const responseText = resultData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
-    // Limpar markdown caso o modelo retorne com ```json
-    let cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+    let cleanJson = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
     try {
       const parsedData = JSON.parse(cleanJson);
       return NextResponse.json(parsedData, { status: 200 });
     } catch (e) {
       console.error("Falha ao fazer parse do JSON retornado pelo Gemini:", cleanJson);
-      return NextResponse.json({ detail: 'O modelo de IA retornou um formato inválido.', raw: cleanJson }, { status: 500 });
+      return NextResponse.json({ detail: 'O modelo de IA não retornou um formato JSON válido.' }, { status: 500 });
     }
 
   } catch (error: any) {
