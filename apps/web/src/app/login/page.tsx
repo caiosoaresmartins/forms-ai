@@ -95,6 +95,7 @@ export default function LoginPage() {
     
     // Login do Gestor
     if (email.trim().toLowerCase() === 'caio felipe' && password === '@122191zX') {
+      localStorage.setItem('admin_auth', 'true')
       router.push('/admin')
       return
     }

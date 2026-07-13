@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   LayoutDashboard, 
@@ -18,10 +18,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (localStorage.getItem('admin_auth') === 'true') {
+        setIsAuthenticated(true);
+      }
+    }
+  }, []);
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // Credenciais solicitadas pelo Caio
     if (username.trim().toLowerCase() === 'caio felipe' && password === '@122191zX') {
+      localStorage.setItem('admin_auth', 'true');
       setIsAuthenticated(true);
       setError('');
     } else {
@@ -124,7 +133,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <div className="p-4 border-t border-zinc-800/60">
           <button 
-            onClick={() => setIsAuthenticated(false)}
+            onClick={() => {
+              localStorage.removeItem('admin_auth');
+              setIsAuthenticated(false);
+            }}
             className="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10 font-medium text-sm transition-colors"
           >
             <LogOut className="w-4 h-4" />
