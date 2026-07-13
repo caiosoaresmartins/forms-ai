@@ -34,10 +34,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ detail: 'GEMINI_API_KEY não configurada no servidor.' }, { status: 500 });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    // Usando gemini-1.5-flash-latest por causa da versão v1beta
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
-
     const prompt = `
 Você é um assistente jurídico especializado em Due Diligence e análise de contratos e formulários imobiliários/jurídicos.
 Sua tarefa é analisar o texto do documento fornecido e extrair as partes envolvidas (clientes, empresas, requerentes, etc.) e identificar a lista de documentos necessários para cada uma dessas partes, com base no contexto do contrato.
@@ -68,8 +64,34 @@ TEXTO DO DOCUMENTO:
 ${pdfText}
 `;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
+    // Função auxiliar para tentar modelos diferentes
+    const callGemini = async (modelName: string) => {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+        })
+      });
+      if (!res.ok) {
+        throw new Error(`${res.status} ${res.statusText} (${modelName})`);
+      }
+      return await res.json();
+    };
+
+    let resultData;
+    try {
+      resultData = await callGemini("gemini-1.5-flash");
+    } catch (e) {
+      console.warn("Falha no gemini-1.5-flash, tentando gemini-pro...", e);
+      try {
+        resultData = await callGemini("gemini-pro");
+      } catch (e2: any) {
+        throw new Error("Ambos os modelos falharam. Erro final: " + e2.message);
+      }
+    }
+
+    const responseText = resultData.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
     // Limpar markdown caso o modelo retorne com ```json
     let cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
