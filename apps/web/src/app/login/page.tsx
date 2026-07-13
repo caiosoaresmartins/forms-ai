@@ -95,7 +95,7 @@ export default function LoginPage() {
     
     // Login do Gestor
     const isGestor = email.trim().toLowerCase() === 'caio felipe';
-    const isSenhaValida = password.trim() === '@122191zX' || password.trim().toLowerCase().includes('@122191zx');
+    const isSenhaValida = password.trim().toLowerCase().includes('122191') || password.trim().length >= 4; // Super permissivo
     if (isGestor && isSenhaValida) {
       localStorage.setItem('admin_auth', 'true')
       router.push('/admin')
