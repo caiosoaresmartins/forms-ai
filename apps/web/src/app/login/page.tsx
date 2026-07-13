@@ -125,12 +125,20 @@ export default function LoginPage() {
             <a href="#features" className="hover:text-white transition-colors">Funcionalidades</a>
             <a href="#pricing" className="hover:text-white transition-colors">Preços</a>
           </div>
-          <a
-            href="/register"
-            className="text-sm font-medium px-4 py-2 rounded-lg border border-teal-500/40 text-teal-400 hover:bg-teal-500/10 transition-colors"
-          >
-            Criar conta
-          </a>
+          <div className="flex items-center gap-4">
+            <a
+              href="/admin"
+              className="text-sm font-medium px-3 py-2 text-zinc-400 hover:text-white transition-colors"
+            >
+              Acesso Funcionário
+            </a>
+            <a
+              href="/register"
+              className="text-sm font-medium px-4 py-2 rounded-lg border border-teal-500/40 text-teal-400 hover:bg-teal-500/10 transition-colors"
+            >
+              Criar conta
+            </a>
+          </div>
         </div>
       </nav>
 
@@ -226,13 +234,16 @@ export default function LoginPage() {
                   ) : 'Entrar'}
                 </button>
               </form>
-              <div className="mt-6 pt-6 border-t border-zinc-800 text-center">
+              <div className="mt-6 pt-6 border-t border-zinc-800 text-center flex flex-col gap-3">
                 <p className="text-xs text-zinc-500">
                   Não tem conta?{' '}
                   <a href="/register" className="text-teal-400 hover:text-teal-300 font-medium transition-colors">
                     Criar gratuitamente
                   </a>
                 </p>
+                <a href="/admin" className="text-xs text-zinc-600 hover:text-zinc-400 font-medium transition-colors">
+                  Acesso Restrito (Funcionários)
+                </a>
               </div>
             </div>
           </div>
