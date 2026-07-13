@@ -58,20 +58,19 @@ Retorne SOMENTE o objeto JSON puro e válido. Não adicione nenhum outro texto.
     let responseText = "";
 
     try {
-      // Tenta primeiro com o flash-latest (muito mais rápido e suporta PDF nativamente)
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+      // Modelo principal: Gemini 2.5 Flash (rápido, multimodal, suporta PDF nativo)
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const result = await model.generateContent([prompt, pdfPart]);
       responseText = result.response.text();
     } catch (e: any) {
-      console.warn("Falha no gemini-1.5-flash-latest, tentando pro-latest...", e.message);
+      console.warn("Falha no gemini-2.5-flash, tentando gemini-2.0-flash...", e.message);
       try {
-        // Fallback pro caso o flash-latest esteja indisponível
-        const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+        const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
         const result = await fallbackModel.generateContent([prompt, pdfPart]);
         responseText = result.response.text();
       } catch (e2: any) {
-        console.error("Erro no Flash:", e.message, " | Erro no Pro:", e2.message);
-        throw new Error(`O processamento via IA falhou. (Flash: ${e.message})`);
+        console.error("Erro Flash 2.5:", e.message, " | Erro Flash 2.0:", e2.message);
+        throw new Error(`Nenhum modelo Gemini disponível. Verifique sua GEMINI_API_KEY. (${e.message})`);
       }
     }
 

@@ -15,11 +15,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/admin', request.url))
   }
 
+  // A landing page (/) é pública — permitir acesso direto
+  if (pathname === '/') {
+    return NextResponse.next()
+  }
+
   // Permite rotas públicas e assets
   if (
     PUBLIC_PATHS.some((p) => pathname.startsWith(p)) ||
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api/auth') // Permite acesso a /api/auth/login e /register
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/forms') // Permite upload e análise de PDFs
   ) {
     return NextResponse.next()
   }
