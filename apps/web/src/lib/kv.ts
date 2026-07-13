@@ -35,15 +35,10 @@ async function upstash(commands: any[]) {
  * Retorna o valor de uma chave (ou null se não existir)
  */
 export async function kvGet(key: string): Promise<any | null> {
-  try {
-    const result = await upstash([['GET', key]]);
-    const raw = result[0]?.result;
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch (err) {
-    console.error(`Erro ao buscar chave ${key}:`, err);
-    return null;
-  }
+  const result = await upstash([['GET', key]]);
+  const raw = result[0]?.result;
+  if (!raw) return null;
+  return JSON.parse(raw);
 }
 
 /**
