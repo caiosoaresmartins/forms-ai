@@ -31,14 +31,14 @@ api.interceptors.response.use(
 // --- Auth ---
 export const authApi = {
   login: (email: string, password: string) =>
-    api.post('/auth/login', { email, password }),
+    axios.post('/api/auth/login', { email, password }),
   register: (data: {
     email: string
     password: string
     full_name?: string
     tenant_name: string
     tenant_slug: string
-  }) => api.post('/auth/register', data),
+  }) => axios.post('/api/auth/register', data),
   me: () => api.get('/auth/me'),
   refresh: (refresh_token: string) => api.post('/auth/refresh', { refresh_token }),
 }
