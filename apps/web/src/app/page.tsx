@@ -536,15 +536,38 @@ export default function App() {
     setPartiesData(initialMockParties);
   };
 
-  const handleUploadStart = () => {
+  const handleUploadStart = async (file: File) => {
     setFormId(`job-${Math.floor(Math.random() * 10000)}`);
     setCurrentView('analyzing');
-    addToast('Iniciando análise com IA...', 'default');
+    addToast('Lendo PDF com Gemini 1.5 Flash...', 'default');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const res = await fetch('/api/forms/analyze', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || 'Erro na análise');
+      }
+
+      const data = await res.json();
+      setPartiesData(data.parties);
+      setCurrentView('checklist');
+      addToast('Extração de dados concluída', 'success');
+    } catch (error: any) {
+      console.error(error);
+      addToast(`Erro: ${error.message}`, 'error');
+      setCurrentView('upload');
+    }
   };
 
   const handleAnalysisComplete = () => {
-    setCurrentView('checklist');
-    addToast('Extração de dados concluída', 'success');
+    // Não é mais usado diretamente (o fluxo agora é async no handleUploadStart)
   };
 
   return (
@@ -834,11 +857,11 @@ function UploadZone({ onUpload }: any) {
                 Cancelar
               </button>
               <button 
-                onClick={onUpload}
+                onClick={() => onUpload(file)}
                 className="px-6 py-2.5 text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-[0_0_20px_rgba(79,70,229,0.4)] transition-all flex items-center gap-2"
               >
                 <Sparkles className="w-4 h-4" />
-                Processar com Groq
+                Processar com Gemini
               </button>
             </div>
           </div>
@@ -852,10 +875,9 @@ function AnalyzingView({ onComplete }: any) {
   const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
-    { text: 'Conectando ao S3 Bucket', time: 1000 },
-    { text: 'Extraindo texto via OCR (Paddle)', time: 2000 },
-    { text: 'Processando LLM (Llama-3 70B)', time: 3000 },
-    { text: 'Estruturando Due Diligence em JSON', time: 1500 },
+    { text: 'Lendo Arquivo e Extraindo Texto (pdf-parse)', time: 1000 },
+    { text: 'Processando LLM (Gemini 1.5 Flash)', time: 2000 },
+    { text: 'Estruturando Due Diligence em JSON', time: 3000 },
   ];
 
   useEffect(() => {
