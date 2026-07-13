@@ -7,7 +7,7 @@ import type { NextRequest } from 'next/server'
 
 const PUBLIC_PATHS = ['/login', '/register', '/favicon.ico']
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Redireciona /funcionarios para /admin
