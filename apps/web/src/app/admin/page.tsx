@@ -1,146 +1,391 @@
-import React from 'react';
-import { 
-  TrendingUp, 
-  Users, 
-  FileText, 
-  Zap,
-  ArrowUpRight
-} from 'lucide-react';
+'use client';
 
-const stats = [
-  { name: 'Receita Recorrente (MRR)', value: 'R$ 14.500', change: '+12.5%', icon: TrendingUp },
-  { name: 'Clientes Ativos (Tenants)', value: '24', change: '+3', icon: Users },
-  { name: 'Formulários Processados', value: '1.284', change: '+18.2%', icon: FileText },
-  { name: 'Uso de IA (Tokens)', value: '4.2M', change: '+5.4%', icon: Zap },
-];
+import React, { useState, useEffect } from 'react';
 
-const recentClients = [
-  { id: 1, name: 'Imobiliária Silva & Cia', plan: 'Profissional', status: 'Ativo', usage: '84%' },
-  { id: 2, name: 'Cartório do 4º Ofício', plan: 'Enterprise', status: 'Ativo', usage: '42%' },
-  { id: 3, name: 'RH Tech Solutions', plan: 'Starter', status: 'Inadimplente', usage: '100%' },
-  { id: 4, name: 'Construtora Horizonte', plan: 'Profissional', status: 'Ativo', usage: '12%' },
-];
+export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [activeView, setActiveView] = useState('view-dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [toasts, setToasts] = useState<{id: number, message: string}[]>([]);
 
-export default function AdminDashboard() {
-  return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold text-white tracking-tight mb-1">Visão Geral do Negócio</h2>
-          <p className="text-sm text-zinc-400">Acompanhe as métricas de receita, uso e saúde dos clientes.</p>
-        </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold rounded-lg transition-colors shadow-lg shadow-teal-500/20">
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-          Disparar Aviso de E-mail
-        </button>
-      </div>
+  // Carrega estado do localStorage (se o gestor já tinha entrado)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('admin_auth') === 'true') {
+      setIsAuthenticated(true);
+      setTimeout(animateQuotaBars, 100);
+    }
+  }, []);
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <div key={stat.name} className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-5 shadow-sm">
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-10 h-10 rounded-lg bg-zinc-800/80 flex items-center justify-center border border-zinc-700/50">
-                  <Icon className="w-5 h-5 text-zinc-400" />
-                </div>
-                <span className="flex items-center text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
-                  {stat.change}
-                  <ArrowUpRight className="w-3 h-3 ml-1" />
-                </span>
-              </div>
-              <p className="text-zinc-400 text-sm font-medium mb-1">{stat.name}</p>
-              <h3 className="text-3xl font-semibold text-white tracking-tight">{stat.value}</h3>
-            </div>
-          );
-        })}
-      </div>
+  const handleLogin = () => {
+    setLoading(true);
+    setTimeout(() => {
+      localStorage.setItem('admin_auth', 'true');
+      setIsAuthenticated(true);
+      setLoading(false);
+      setTimeout(animateQuotaBars, 100);
+    }, 1200);
+  };
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Clients Table */}
-        <div className="lg:col-span-2 bg-zinc-900/50 border border-zinc-800/60 rounded-xl overflow-hidden">
-          <div className="px-6 py-5 border-b border-zinc-800/60 flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-white">Últimos Clientes Ativos</h3>
-              <p className="text-sm text-zinc-400 mt-1">Empresas consumindo a cota de formulários neste mês.</p>
-            </div>
-            <button className="text-sm text-teal-400 hover:text-teal-300 font-medium transition-colors">
-              Ver todos
-            </button>
+  const handleLogout = () => {
+    localStorage.removeItem('admin_auth');
+    setIsAuthenticated(false);
+  };
+
+  const showToast = (message: string) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3500);
+  };
+
+  const animateQuotaBars = () => {
+    const fills = document.querySelectorAll('.quota-fill') as NodeListOf<HTMLElement>;
+    fills.forEach(fill => {
+      const width = fill.style.width;
+      fill.style.width = '0%';
+      setTimeout(() => { fill.style.width = width; }, 50);
+    });
+  };
+
+  const handleNavClick = (view: string) => {
+    setActiveView(view);
+    if (window.innerWidth <= 900) {
+      setSidebarOpen(false);
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div id="app-login" className="flex items-center justify-center min-h-screen">
+        <div className="login-card">
+          <div className="login-icon">🚀</div>
+          <h1 className="login-title">Forms AI Admin</h1>
+          <p className="login-sub">Acesso restrito ao Painel Central</p>
+          
+          <div className="form-group">
+            <label className="form-label" htmlFor="login-user">Identificação do Gestor</label>
+            <input className="form-input" type="text" id="login-user" placeholder="nome@forms.ai" defaultValue="caio felipe" autoComplete="username" />
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="login-pass">Código de Acesso</label>
+            <input className="form-input" type="password" id="login-pass" placeholder="••••••••" defaultValue="password123" autoComplete="current-password" />
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-zinc-500 uppercase bg-zinc-900/80 border-b border-zinc-800/60">
-                <tr>
-                  <th className="px-6 py-4 font-medium">Empresa (Tenant)</th>
-                  <th className="px-6 py-4 font-medium">Plano Assinado</th>
-                  <th className="px-6 py-4 font-medium">Uso da Cota (IA)</th>
-                  <th className="px-6 py-4 font-medium">Status Pagamento</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800/60">
-                {recentClients.map((client) => (
-                  <tr key={client.id} className="hover:bg-zinc-800/20 transition-colors">
-                    <td className="px-6 py-4 font-medium text-white">{client.name}</td>
-                    <td className="px-6 py-4 text-zinc-400">{client.plan}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-24 h-2 bg-zinc-800 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full ${parseInt(client.usage) > 90 ? 'bg-red-500' : 'bg-teal-500'}`} 
-                            style={{ width: client.usage }}
-                          />
-                        </div>
-                        <span className="text-xs text-zinc-500">{client.usage}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${
-                        client.status === 'Ativo' 
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                          : 'bg-red-500/10 text-red-400 border-red-500/20'
-                      }`}>
-                        {client.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <button 
+            className="btn-primary" 
+            id="btn-login" 
+            onClick={handleLogin}
+            disabled={loading}
+            style={{ pointerEvents: loading ? 'none' : 'auto' }}
+          >
+            {!loading ? (
+              <span id="btn-text">Iniciar Sessão Galáctica</span>
+            ) : (
+              <div className="loader" id="btn-loader" style={{ display: 'block' }}></div>
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const getTopbarTitle = () => {
+    switch (activeView) {
+      case 'view-dashboard': return 'Dashboard Executivo';
+      case 'view-clients': return 'Clientes (Tenants)';
+      case 'view-billing': return 'Faturação';
+      case 'view-usage': return 'Log de IA (Tokens)';
+      default: return 'Dashboard';
+    }
+  };
+
+  return (
+    <div id="app-dashboard" className="visible w-full">
+      {/* BARRA LATERAL (SIDEBAR) */}
+      <nav className={`sidebar ${sidebarOpen ? 'open' : ''}`} id="sidebar">
+        <div className="sidebar-logo">
+          <div className="logo-text">Forms AI <span>Admin</span></div>
+          <div className="logo-sub">Painel de Controlo v2.0</div>
+        </div>
+        
+        <div className="sidebar-nav">
+          <div className="nav-label">Visão Global</div>
+          
+          <div className={`nav-item ${activeView === 'view-dashboard' ? 'active' : ''}`} onClick={() => handleNavClick('view-dashboard')}>
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+            Dashboard
+          </div>
+          
+          <div className={`nav-item ${activeView === 'view-clients' ? 'active' : ''}`} onClick={() => handleNavClick('view-clients')}>
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Clientes (Tenants)
+          </div>
+          
+          <div className={`nav-item ${activeView === 'view-billing' ? 'active' : ''}`} onClick={() => handleNavClick('view-billing')}>
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+            Faturação
+          </div>
+          
+          <div className={`nav-item ${activeView === 'view-usage' ? 'active' : ''}`} onClick={() => handleNavClick('view-usage')}>
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Log de IA (Tokens)
           </div>
         </div>
+        
+        <div className="sidebar-footer">
+          <button className="btn-logout" id="btn-logout" onClick={handleLogout}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Terminar Sessão
+          </button>
+        </div>
+      </nav>
 
-        {/* Notifications Panel */}
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl overflow-hidden flex flex-col">
-          <div className="px-6 py-5 border-b border-zinc-800/60 flex items-center justify-between">
-            <h3 className="text-lg font-medium text-white">Notificações do Sistema</h3>
-            <span className="bg-teal-500 text-zinc-950 text-xs font-bold px-2 py-0.5 rounded-full">3</span>
+      {/* ÁREA PRINCIPAL */}
+      <div className="main-wrapper">
+        
+        {/* TOPBAR */}
+        <header className="topbar">
+          <div className="topbar-left">
+            <button className="btn-menu" id="btn-menu" onClick={() => setSidebarOpen(!sidebarOpen)}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
+            <span className="topbar-title" id="topbar-title">{getTopbarTitle()}</span>
           </div>
-          <div className="p-4 flex-1 overflow-y-auto space-y-3">
-            {[
-              { title: 'Fatura Vencida', desc: 'RH Tech Solutions não pagou a mensalidade.', time: 'Há 2 horas', type: 'error' },
-              { title: 'Cota Excedida', desc: 'Imobiliária Silva atingiu 90% da cota de IA.', time: 'Há 5 horas', type: 'alert' },
-              { title: 'Novo Assinante', desc: 'Cartório 4º Ofício assinou o plano Enterprise.', time: 'Ontem', type: 'success' }
-            ].map((note, i) => (
-              <div key={i} className="bg-zinc-950/50 border border-zinc-800/60 rounded-lg p-4 flex gap-3 hover:border-zinc-700 transition-colors cursor-pointer">
-                <div className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${
-                  note.type === 'error' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' :
-                  note.type === 'alert' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' :
-                  'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]'
-                }`} />
-                <div>
-                  <h4 className="text-sm font-medium text-white mb-0.5">{note.title}</h4>
-                  <p className="text-xs text-zinc-400 leading-relaxed mb-2">{note.desc}</p>
-                  <span className="text-[10px] text-zinc-600 font-medium uppercase tracking-wider">{note.time}</span>
+          
+          <div className="topbar-right">
+            <div className="secure-tag">
+              <div className="pulse-dot"></div>
+              Ligação Segura
+            </div>
+            <div className="avatar-cf" title="Perfil do Administrador">CF</div>
+          </div>
+        </header>
+
+        {/* CONTEÚDO PRINCIPAL */}
+        <main className="content-area">
+          
+          {/* ======= VISTA: DASHBOARD ======= */}
+          <div className={`content-view ${activeView === 'view-dashboard' ? 'active' : ''}`} id="view-dashboard">
+            <div className="page-header">
+              <div>
+                <h1 className="page-title"><span className="gradient-text">Resumo Galáctico</span></h1>
+                <p className="page-sub">Visão geral da infraestrutura Forms AI · Julho 2026</p>
+              </div>
+              <button className="btn-action" id="btn-email" onClick={() => showToast("Aviso por e-mail disparado para os Administradores.")}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+                Disparar Aviso Geral
+              </button>
+            </div>
+
+            {/* Cartões KPI */}
+            <div className="kpi-grid">
+              <div className="card kpi-card violet">
+                <div className="kpi-header">
+                  <span className="kpi-label">Receita Recorrente</span>
+                  <div className="kpi-icon violet">💰</div>
+                </div>
+                <div className="kpi-value">R$ 14.500</div>
+                <span className="kpi-trend up">↑ +12,5% este mês</span>
+              </div>
+              
+              <div className="card kpi-card cyan">
+                <div className="kpi-header">
+                  <span className="kpi-label">Tenants Ativos</span>
+                  <div className="kpi-icon cyan">🏢</div>
+                </div>
+                <div className="kpi-value">24</div>
+                <span className="kpi-trend up">↑ +3 novas empresas</span>
+              </div>
+              
+              <div className="card kpi-card green">
+                <div className="kpi-header">
+                  <span className="kpi-label">Formulários Processados</span>
+                  <div className="kpi-icon green">📋</div>
+                </div>
+                <div className="kpi-value">18.340</div>
+                <span className="kpi-trend up">↑ +8,2% vs mês ant.</span>
+              </div>
+              
+              <div className="card kpi-card amber">
+                <div className="kpi-header">
+                  <span className="kpi-label">Tokens Processados</span>
+                  <div className="kpi-icon amber">⚡</div>
+                </div>
+                <div className="kpi-value">4.2M</div>
+                <span className="kpi-trend down">↑ +22% consumo IA</span>
+              </div>
+            </div>
+
+            {/* Grelha Inferior (Tabela + Notificações) */}
+            <div className="main-grid">
+              
+              {/* Tabela de Clientes */}
+              <div className="card">
+                <div className="card-header">
+                  <span className="card-title">Monitorização de Tenants</span>
+                  <span className="badge">Top 5 Consumo</span>
+                </div>
+                <div className="table-container">
+                  <table className="clients-table">
+                    <thead>
+                      <tr>
+                        <th>Empresa / ID</th>
+                        <th>Subscrição</th>
+                        <th>Cota de IA</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><div className="tenant-name">Eurostock Imóveis</div><div className="tenant-id">#T-0012</div></td>
+                        <td><span className="plan-badge enterprise">Enterprise</span></td>
+                        <td><div className="quota-bar"><div className="quota-track"><div className="quota-fill ok" style={{width: '68%'}}></div></div><span className="quota-pct">68%</span></div></td>
+                        <td><span className="status-pill active"><span className="status-dot"></span>Ativo</span></td>
+                      </tr>
+                      <tr>
+                        <td><div className="tenant-name">Prime Seguros</div><div className="tenant-id">#T-0009</div></td>
+                        <td><span className="plan-badge pro">Pro</span></td>
+                        <td><div className="quota-bar"><div className="quota-track"><div className="quota-fill warn" style={{width: '91%'}}></div></div><span className="quota-pct">91%</span></div></td>
+                        <td><span className="status-pill active"><span className="status-dot"></span>Ativo</span></td>
+                      </tr>
+                      <tr>
+                        <td><div className="tenant-name">Vertix Consultoria</div><div className="tenant-id">#T-0007</div></td>
+                        <td><span className="plan-badge starter">Starter</span></td>
+                        <td><div className="quota-bar"><div className="quota-track"><div className="quota-fill ok" style={{width: '44%'}}></div></div><span className="quota-pct">44%</span></div></td>
+                        <td><span className="status-pill overdue"><span className="status-dot"></span>Inadimplente</span></td>
+                      </tr>
+                      <tr>
+                        <td><div className="tenant-name">Fusion Corretora</div><div className="tenant-id">#T-0021</div></td>
+                        <td><span className="plan-badge pro">Pro</span></td>
+                        <td><div className="quota-bar"><div className="quota-track"><div className="quota-fill ok" style={{width: '30%'}}></div></div><span className="quota-pct">30%</span></div></td>
+                        <td><span className="status-pill active"><span className="status-dot"></span>Ativo</span></td>
+                      </tr>
+                      <tr>
+                        <td><div className="tenant-name">Nexo Gestão</div><div className="tenant-id">#T-0018</div></td>
+                        <td><span className="plan-badge enterprise">Enterprise</span></td>
+                        <td><div className="quota-bar"><div className="quota-track"><div className="quota-fill over" style={{width: '100%'}}></div></div><span className="quota-pct">100%</span></div></td>
+                        <td><span className="status-pill active"><span className="status-dot"></span>Ativo</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            ))}
+
+              {/* Centro de Notificações */}
+              <div className="card">
+                <div className="card-header">
+                  <span className="card-title">Eventos do Sistema</span>
+                  <span className="badge">3 Novos</span>
+                </div>
+                <div className="notif-list">
+                  <div className="notif-item red">
+                    <div className="notif-emoji">🚨</div>
+                    <div className="notif-content">
+                      <div className="notif-title">Cota de Tokens Excedida</div>
+                      <div className="notif-desc">O tenant "Nexo Gestão" atingiu 100% do limite de tokens de IA para o ciclo atual.</div>
+                      <div className="notif-time">Há 12 minutos</div>
+                    </div>
+                  </div>
+                  
+                  <div className="notif-item amber">
+                    <div className="notif-emoji">⚠️</div>
+                    <div className="notif-content">
+                      <div className="notif-title">Pico de Processamento</div>
+                      <div className="notif-desc">Latência na API OpenAI aumentou para 1.2s nos últimos 5 minutos. Monitorização ativa.</div>
+                      <div className="notif-time">Há 1 hora</div>
+                    </div>
+                  </div>
+                  
+                  <div className="notif-item green">
+                    <div className="notif-emoji">✨</div>
+                    <div className="notif-content">
+                      <div className="notif-title">Novo Registo (Tenant)</div>
+                      <div className="notif-desc">"Global Trade Lda" subscreveu o plano Pro. Processo de integração automático iniciado.</div>
+                      <div className="notif-time">Hoje, 09:45</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
           </div>
-        </div>
+
+          {/* ======= VISTA: CLIENTES ======= */}
+          <div className={`content-view ${activeView === 'view-clients' ? 'active' : ''}`} id="view-clients">
+            <div className="page-header">
+              <div>
+                <h1 className="page-title">Gestão de <span className="gradient-text">Tenants</span></h1>
+                <p className="page-sub">Controle de acesso e configurações por empresa.</p>
+              </div>
+            </div>
+            <div className="placeholder-box">
+              <div className="placeholder-icon">🏢</div>
+              <h3>Módulo de Clientes</h3>
+              <p>Interface avançada para gestão de subscrições, limites de API, acesso a formulários customizados e auditoria de cada tenant.</p>
+            </div>
+          </div>
+
+          {/* ======= VISTA: FATURAÇÃO ======= */}
+          <div className={`content-view ${activeView === 'view-billing' ? 'active' : ''}`} id="view-billing">
+            <div className="page-header">
+              <div>
+                <h1 className="page-title">Controlo de <span className="gradient-text">Faturação</span></h1>
+                <p className="page-sub">Receita recorrente e relatórios financeiros.</p>
+              </div>
+            </div>
+            <div className="placeholder-box">
+              <div className="placeholder-icon">💳</div>
+              <h3>Módulo Financeiro</h3>
+              <p>Integração com Stripe, emissão de faturas automáticas, gestão de pagamentos falhados (churn) e métricas de MRR/ARR.</p>
+            </div>
+          </div>
+
+          {/* ======= VISTA: USO DE IA ======= */}
+          <div className={`content-view ${activeView === 'view-usage' ? 'active' : ''}`} id="view-usage">
+            <div className="page-header">
+              <div>
+                <h1 className="page-title">Auditoria de <span className="gradient-text">Tokens IA</span></h1>
+                <p className="page-sub">Monitorização em tempo real de consumo LLM.</p>
+              </div>
+            </div>
+            <div className="placeholder-box">
+              <div className="placeholder-icon">🧠</div>
+              <h3>Telemetria de Inteligência Artificial</h3>
+              <p>Logs detalhados de prompts gerados, consumo por modelo (GPT-4o, Claude 3.5), custos em tempo real e otimização de requisições.</p>
+            </div>
+          </div>
+
+        </main>
+      </div>
+      
+      {/* TOASTS */}
+      <div className="toast-container">
+        {toasts.map(toast => (
+          <div key={toast.id} className="toast show">
+            <svg className="toast-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            {toast.message}
+          </div>
+        ))}
       </div>
     </div>
   );
