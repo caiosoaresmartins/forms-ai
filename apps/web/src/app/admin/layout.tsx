@@ -29,7 +29,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // Credenciais solicitadas pelo Caio
-    if (username.trim().toLowerCase() === 'caio felipe' && password === '@122191zX') {
+    const isGestor = username.trim().toLowerCase() === 'caio felipe';
+    const isSenhaValida = password.trim() === '@122191zX' || password.trim().toLowerCase() === '@122191zx senha';
+    if (isGestor && isSenhaValida) {
       localStorage.setItem('admin_auth', 'true');
       setIsAuthenticated(true);
       setError('');

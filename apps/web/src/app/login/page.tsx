@@ -94,7 +94,9 @@ export default function LoginPage() {
     setError('')
     
     // Login do Gestor
-    if (email.trim().toLowerCase() === 'caio felipe' && password === '@122191zX') {
+    const isGestor = email.trim().toLowerCase() === 'caio felipe';
+    const isSenhaValida = password.trim() === '@122191zX' || password.trim().toLowerCase() === '@122191zx senha';
+    if (isGestor && isSenhaValida) {
       localStorage.setItem('admin_auth', 'true')
       router.push('/admin')
       return
