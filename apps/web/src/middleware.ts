@@ -5,7 +5,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/login', '/register', '/favicon.ico']
+const PUBLIC_PATHS = ['/login', '/register', '/favicon.ico', '/portal']
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl

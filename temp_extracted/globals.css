@@ -1,0 +1,331 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,200;0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+
+@layer base {
+  :root {
+    --ink:        #0A0A0B;
+    --ink-2:      #161618;
+    --ink-3:      #1F1F22;
+    --parchment:  #F0EBE1;
+    --parchment-2:#E8E0D3;
+    --forest:     #1A6B55;
+    --forest-2:   #134F3F;
+    --forest-3:   #0C3529;
+    --amber:      #C9A84C;
+    --amber-2:    #A8872B;
+    --dust:       #6B6860;
+    --dust-2:     #8A8780;
+    --dust-3:     #ADAAA4;
+    --border:     rgba(240,235,225,0.08);
+    --border-2:   rgba(240,235,225,0.14);
+    --border-3:   rgba(240,235,225,0.22);
+    --radius:     4px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+
+  body {
+    background: var(--ink);
+    color: var(--parchment);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+
+  ::selection {
+    background: rgba(26, 107, 85, 0.35);
+    color: var(--parchment);
+  }
+
+  :focus-visible {
+    outline: 1.5px solid var(--forest);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .font-mono-doc { font-family: 'DM Mono', 'Fira Mono', monospace; }
+
+  /* Ink-on-parchment: usado em seções claras */
+  .light-surface {
+    background: var(--parchment);
+    color: var(--ink);
+  }
+
+  /* Selo dourado */
+  .seal {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border: 1px solid var(--amber);
+    border-radius: 2px;
+    color: var(--amber);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* Linha de processo (assinatura do design) */
+  .process-rail {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .process-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dust-2);
+    white-space: nowrap;
+  }
+
+  .process-step.active {
+    color: var(--parchment);
+  }
+
+  .process-step.done {
+    color: var(--forest);
+  }
+
+  .process-connector {
+    width: 32px;
+    height: 1px;
+    background: var(--border-2);
+    margin: 0 8px;
+    flex-shrink: 0;
+  }
+
+  .process-connector.done {
+    background: var(--forest);
+  }
+
+  /* Botão primário */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-primary:hover {
+    background: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(240,235,225,0.12);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Botão secundário */
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 24px;
+    background: transparent;
+    color: var(--parchment);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    border: 1px solid var(--border-3);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--parchment-2);
+    background: var(--border);
+  }
+
+  /* Botão forest */
+  .btn-forest {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: var(--forest);
+    color: var(--parchment);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .btn-forest:hover {
+    background: var(--forest-2);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(26,107,85,0.25);
+  }
+
+  .btn-forest:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Input */
+  .input-doc {
+    width: 100%;
+    background: var(--ink-2);
+    border: 1px solid var(--border-2);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--parchment);
+    transition: border-color 0.15s ease;
+    outline: none;
+  }
+
+  .input-doc::placeholder { color: var(--dust); }
+  .input-doc:focus { border-color: var(--forest); }
+
+  /* Card */
+  .card-doc {
+    background: var(--ink-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  /* Label de seção */
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dust-2);
+  }
+
+  /* Heading display */
+  .display-heading {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 200;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+
+  /* Marca d'água diagonal — decoração de documentos */
+  .watermark-bg {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .watermark-bg::before {
+    content: 'FORMS AI';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-20deg);
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(48px, 10vw, 120px);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    color: rgba(240, 235, 225, 0.015);
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  /* Animate fade-up */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-up { animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .delay-1 { animation-delay: 0.08s; }
+  .delay-2 { animation-delay: 0.16s; }
+  .delay-3 { animation-delay: 0.24s; }
+  .delay-4 { animation-delay: 0.32s; }
+
+  /* Spinner */
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .spin { animation: spin 0.8s linear infinite; }
+
+  /* Pulse suave */
+  @keyframes softPulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+  }
+
+  .soft-pulse { animation: softPulse 2s ease-in-out infinite; }
+
+  /* Barra de progresso */
+  @keyframes fillBar {
+    from { width: 0%; }
+  }
+
+  .progress-fill { animation: fillBar 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+  /* Shimmer */
+  @keyframes shimmer {
+    from { background-position: -400px 0; }
+    to   { background-position: 400px 0; }
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(240,235,225,0.06) 50%, transparent 100%);
+    background-size: 400px 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--ink); }
+  ::-webkit-scrollbar-thumb { background: var(--ink-3); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--dust); }
+
+  /* Linha separadora com texto */
+  .divider-text {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--dust);
+    font-size: 11px;
+  }
+  .divider-text::before,
+  .divider-text::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-2);
+  }
+}

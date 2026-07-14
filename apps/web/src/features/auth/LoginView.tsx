@@ -7,13 +7,35 @@ export function LoginView({ onLogin, onBack }: { onLogin: (email: string) => voi
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError('');
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.detail || 'E-mail ou senha inválidos.');
+        setLoading(false);
+        return;
+      }
+
+      // O cookie HttpOnly já é setado pela API. Salvamos apenas por compatibilidade local.
+      localStorage.setItem('access_token', data.access_token);
       onLogin(email || 'gestor@empresa.com');
+    } catch (err) {
+      setError('Erro ao conectar com o servidor.');
+    } finally {
       setLoading(false);
-    }, 900);
+    }
   };
 
   return (
@@ -73,6 +95,11 @@ export function LoginView({ onLogin, onBack }: { onLogin: (email: string) => voi
                 placeholder="••••••••" className="input-doc"
               />
             </div>
+            {error && (
+              <p style={{ fontSize: 12, color: 'var(--amber)', background: 'rgba(201,168,76,0.1)', padding: '8px 12px', borderRadius: 4, border: '1px solid var(--amber)' }}>
+                {error}
+              </p>
+            )}
             <button type="submit" disabled={loading} className="btn-forest" style={{ marginTop: 8 }}>
               {loading
                 ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span className="spin" style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(240,235,225,0.3)', borderTopColor: 'var(--parchment)', borderRadius: '50%' }} />Verificando…</span>

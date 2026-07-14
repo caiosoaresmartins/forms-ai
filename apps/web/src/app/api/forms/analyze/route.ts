@@ -146,6 +146,46 @@ ${pdfText.substring(0, 30000)} // Limite de segurança de caracteres
       }
       
       const validatedData = PartiesSchema.parse(parsedData);
+
+      // Persistindo no Supabase (se formId foi passado)
+      const formId = formData.get('formId') as string;
+      if (formId) {
+        try {
+          // Importando Supabase client localmente para uso no Server
+          const { createClient } = require('@supabase/supabase-js');
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+          const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+          const sb = createClient(supabaseUrl, supabaseKey);
+
+          // Inserir cada documento como uma linha na tabela `documentos`
+          const docsToInsert: any[] = [];
+          
+          validatedData.parties.forEach(party => {
+            party.documents.forEach(doc => {
+              docsToInsert.push({
+                id: doc.id,
+                form_id: formId,
+                party_name: party.partyName,
+                role: party.role,
+                name: doc.name,
+                reason: doc.reason,
+                status: 'pending'
+              });
+            });
+          });
+          
+          if (docsToInsert.length > 0) {
+            const { error: dbError } = await sb.from('documentos').insert(docsToInsert);
+            if (dbError) {
+              console.error('Erro ao inserir documentos no Supabase:', dbError);
+              // Não vamos quebrar a resposta se o banco falhar, apenas logar
+            }
+          }
+        } catch (err) {
+          console.error('Erro ao conectar com Supabase no analyze:', err);
+        }
+      }
+
       return NextResponse.json(validatedData, { status: 200 });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
