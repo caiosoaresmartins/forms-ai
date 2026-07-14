@@ -952,8 +952,9 @@ function AnalyzingView({ onComplete }: any) {
 }
 
 function ChecklistPanel({ parties, setParties, formId, addToast, originalFile, onOpenClientPortal }: any) {
-  const totalDocs = parties.reduce((acc: number, party: any) => acc + party.documents.length, 0);
-  const uploadedDocs = parties.reduce((acc: number, party: any) => acc + party.documents.filter((d: any) => d.status === 'uploaded').length, 0);
+  const safeParties = Array.isArray(parties) ? parties : [];
+  const totalDocs = safeParties.reduce((acc: number, party: any) => acc + (party.documents?.length || 0), 0);
+  const uploadedDocs = safeParties.reduce((acc: number, party: any) => acc + (party.documents?.filter((d: any) => d.status === 'uploaded').length || 0), 0);
   const progressPercent = totalDocs === 0 ? 0 : Math.round((uploadedDocs / totalDocs) * 100);
 
   const handleDownloadOriginal = () => {
@@ -1022,7 +1023,7 @@ function ChecklistPanel({ parties, setParties, formId, addToast, originalFile, o
       </div>
 
       <div className="grid gap-6">
-        {parties.map((party: any) => (
+        {safeParties.map((party: any) => (
           <PartyCard 
             key={party.id} 
             party={party} 
@@ -1030,6 +1031,11 @@ function ChecklistPanel({ parties, setParties, formId, addToast, originalFile, o
             addToast={addToast}
           />
         ))}
+        {safeParties.length === 0 && (
+          <div className="text-center p-10 bg-zinc-900/30 rounded-3xl border border-white/5">
+            <p className="text-zinc-400">A IA não conseguiu extrair os documentos corretamente. Tente enviar novamente.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1155,7 +1161,7 @@ function ClientPortalView({ parties, setParties, addToast, onBack }: any) {
       </div>
 
       <div className="grid gap-6">
-        {parties.map((party: any) => (
+        {Array.isArray(parties) && parties.map((party: any) => (
           <div key={party.id} className="bg-zinc-900/40 backdrop-blur-xl rounded-3xl border border-white/5 overflow-hidden shadow-lg">
             <div className="bg-zinc-950/40 px-6 py-4 border-b border-white/5">
               <h3 className="text-lg font-medium text-zinc-100">{party.partyName}</h3>
