@@ -328,4 +328,16 @@
     height: 1px;
     background: var(--border-2);
   }
+
+  /* Responsive container */
+  .container-responsive {
+    padding: 0 16px;
+  }
+  @media (min-width: 768px) {
+    .container-responsive { padding: 0 32px; }
+  }
+  @media (min-width: 1200px) {
+    .container-responsive { padding: 0 48px; }
+  }
 }
+
