@@ -515,6 +515,7 @@ export default function App() {
   const [user, setUser] = useState<any>(null);
   const [formId, setFormId] = useState<string | null>(null);
   const [partiesData, setPartiesData] = useState(initialMockParties);
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
   
   const [toasts, setToasts] = useState<any[]>([]);
   const addToast = (message: string, type = 'default') => {
@@ -538,8 +539,9 @@ export default function App() {
 
   const handleUploadStart = async (file: File) => {
     setFormId(`job-${Math.floor(Math.random() * 10000)}`);
+    setOriginalFile(file);
     setCurrentView('analyzing');
-    addToast('Lendo PDF com Gemini 1.5 Flash...', 'default');
+    addToast('Lendo PDF com Groq...', 'default');
 
     try {
       const formData = new FormData();
@@ -622,6 +624,16 @@ export default function App() {
             setParties={setPartiesData} 
             formId={formId}
             addToast={addToast}
+            originalFile={originalFile}
+            onOpenClientPortal={() => setCurrentView('clientPortal')}
+          />
+        )}
+        {currentView === 'clientPortal' && (
+          <ClientPortalView 
+            parties={partiesData} 
+            setParties={setPartiesData}
+            addToast={addToast}
+            onBack={() => setCurrentView('checklist')}
           />
         )}
       </main>
@@ -939,13 +951,53 @@ function AnalyzingView({ onComplete }: any) {
   );
 }
 
-function ChecklistPanel({ parties, setParties, formId, addToast }: any) {
+function ChecklistPanel({ parties, setParties, formId, addToast, originalFile, onOpenClientPortal }: any) {
   const totalDocs = parties.reduce((acc: number, party: any) => acc + party.documents.length, 0);
   const uploadedDocs = parties.reduce((acc: number, party: any) => acc + party.documents.filter((d: any) => d.status === 'uploaded').length, 0);
   const progressPercent = totalDocs === 0 ? 0 : Math.round((uploadedDocs / totalDocs) * 100);
 
+  const handleDownloadOriginal = () => {
+    if (!originalFile) return;
+    const url = URL.createObjectURL(originalFile);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = originalFile.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFillForm = () => {
+    if (progressPercent < 100) {
+      addToast('Anexe todos os documentos antes de preencher o formulário.', 'error');
+      return;
+    }
+    addToast('Preenchendo formulário automaticamente com IA...', 'default');
+    setTimeout(() => {
+      addToast('Formulário preenchido e gerado com sucesso!', 'success');
+    }, 2500);
+  };
+
   return (
     <div className="flex-1 p-6 md:p-10 max-w-5xl mx-auto w-full z-10 animate-slide-up pb-24">
+      {/* Top Action Bar */}
+      <div className="mb-6 flex flex-wrap items-center gap-3 bg-zinc-900/50 backdrop-blur-xl p-4 rounded-2xl border border-white/5 shadow-lg">
+        <button onClick={handleDownloadOriginal} disabled={!originalFile} className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm font-medium rounded-xl transition-colors">
+          <UploadCloud className="w-4 h-4 rotate-180" />
+          Baixar Original
+        </button>
+        <button onClick={onOpenClientPortal} className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 text-sm font-medium rounded-xl transition-all">
+          <Info className="w-4 h-4" />
+          Portal do Cliente
+        </button>
+        <div className="flex-1"></div>
+        <button onClick={handleFillForm} className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-xl transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+          <Sparkles className="w-4 h-4" />
+          Preencher Formulário
+        </button>
+      </div>
+
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 bg-zinc-900/30 backdrop-blur-xl p-6 rounded-3xl border border-white/5">
         <div>
           <div className="flex items-center gap-3 mb-4">
@@ -1085,6 +1137,68 @@ function DocumentItem({ doc, isLast, onToggle }: any) {
             {doc.reason}
           </p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ClientPortalView({ parties, setParties, addToast, onBack }: any) {
+  return (
+    <div className="flex-1 p-6 md:p-10 max-w-3xl mx-auto w-full z-10 animate-slide-up pb-24">
+      <button onClick={onBack} className="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 mb-8 transition-colors text-sm font-medium">
+        <ArrowRight className="w-4 h-4 rotate-180" /> Voltar para a Matriz
+      </button>
+
+      <div className="text-center mb-10">
+        <h1 className="text-3xl font-semibold text-zinc-100 tracking-tight">Portal de Envio de Documentos</h1>
+        <p className="text-zinc-400 mt-2 font-light">Por favor, anexe os documentos solicitados abaixo para darmos andamento ao seu processo.</p>
+      </div>
+
+      <div className="grid gap-6">
+        {parties.map((party: any) => (
+          <div key={party.id} className="bg-zinc-900/40 backdrop-blur-xl rounded-3xl border border-white/5 overflow-hidden shadow-lg">
+            <div className="bg-zinc-950/40 px-6 py-4 border-b border-white/5">
+              <h3 className="text-lg font-medium text-zinc-100">{party.partyName}</h3>
+            </div>
+            <div className="p-4 space-y-3">
+              {party.documents.map((doc: any) => {
+                const isUploaded = doc.status === 'uploaded';
+                const isUpdating = doc.status === 'updating';
+                
+                const handleToggle = () => {
+                  setParties((prev: any) => prev.map((p: any) => p.id === party.id ? { ...p, documents: p.documents.map((d: any) => d.id === doc.id ? { ...d, status: 'updating' } : d) } : p));
+                  setTimeout(() => {
+                    setParties((prev: any) => prev.map((p: any) => p.id === party.id ? { ...p, documents: p.documents.map((d: any) => d.id === doc.id ? { ...d, status: isUploaded ? 'pending' : 'uploaded' } : d) } : p));
+                    addToast(isUploaded ? 'Documento removido.' : 'Documento enviado com sucesso!', isUploaded ? 'default' : 'success');
+                  }, 800);
+                };
+
+                return (
+                  <div key={doc.id} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border transition-all ${isUploaded ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-zinc-950/50 border-white/5'}`}>
+                    <div>
+                      <p className={`font-medium ${isUploaded ? 'text-zinc-300' : 'text-zinc-200'}`}>{doc.name}</p>
+                      <p className="text-xs text-zinc-500 mt-1">{isUploaded ? 'Documento recebido' : 'Pendente de envio'}</p>
+                    </div>
+                    {isUpdating ? (
+                      <div className="w-[100px] flex justify-end">
+                        <Loader2 className="w-5 h-5 animate-spin text-zinc-400" />
+                      </div>
+                    ) : isUploaded ? (
+                      <button onClick={handleToggle} className="shrink-0 text-xs font-medium text-emerald-400 flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500/10 rounded-xl w-full sm:w-auto">
+                        <Check className="w-4 h-4" /> Enviado
+                      </button>
+                    ) : (
+                      <label className="shrink-0 cursor-pointer text-center bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl text-sm font-medium transition-all shadow-sm w-full sm:w-auto block">
+                        Anexar Arquivo
+                        <input type="file" className="hidden" onChange={handleToggle} />
+                      </label>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
