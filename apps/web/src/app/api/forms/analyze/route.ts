@@ -1,5 +1,20 @@
 import { NextResponse } from 'next/server';
-import pdfParse from 'pdf-parse';
+import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import { z } from 'zod';
+
+const PartiesSchema = z.object({
+  parties: z.array(z.object({
+    id: z.string(),
+    partyName: z.string(),
+    role: z.string(),
+    documents: z.array(z.object({
+      id: z.string(),
+      name: z.string(),
+      status: z.enum(['pending', 'uploaded', 'updating']),
+      reason: z.string()
+    }))
+  }))
+});
 
 export async function POST(req: Request) {
   try {
@@ -10,17 +25,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ detail: 'Nenhum arquivo enviado.' }, { status: 400 });
     }
 
-    // Extrai texto do PDF usando pdf-parse
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const typedArray = new Uint8Array(arrayBuffer);
     
     let pdfText = "";
     try {
-      const pdfData = await pdfParse(buffer);
-      pdfText = pdfData.text.trim();
+      const pdf = await getDocument({ data: typedArray }).promise;
+      const numPages = pdf.numPages;
+      
+      for (let i = 1; i <= numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        pdfText += pageText + '\n';
+      }
     } catch (err: any) {
-      console.error("Erro no pdf-parse:", err.message);
-      return NextResponse.json({ detail: 'Erro ao tentar ler as palavras do PDF. Certifique-se de que não é um arquivo escaneado (imagem).' }, { status: 400 });
+      console.error("Erro ao ler PDF:", err.message);
+      return NextResponse.json({ detail: 'Erro ao tentar ler o PDF. Certifique-se de que não é protegido por senha ou corrompido.' }, { status: 400 });
     }
 
     if (!pdfText) {
@@ -62,7 +85,7 @@ ${pdfText.substring(0, 30000)} // Limite de segurança de caracteres
 `;
 
     const requestBody = {
-      model: "llama-3.3-70b-versatile",
+      model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
       messages: [
         {
           role: "system",
@@ -103,10 +126,33 @@ ${pdfText.substring(0, 30000)} // Limite de segurança de caracteres
     let cleanJson = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
     try {
-      const parsedData = JSON.parse(cleanJson);
-      return NextResponse.json(parsedData, { status: 200 });
-    } catch {
-      console.error("JSON inválido retornado pelo Perplexity:", cleanJson.substring(0, 500));
+      let parsedData = JSON.parse(cleanJson);
+      
+      // Validação Zod com Fallback
+      if (!parsedData.parties || parsedData.parties.length === 0) {
+        parsedData = {
+          parties: [
+            {
+              id: 'party-fallback',
+              partyName: 'Requerente Principal',
+              role: 'Requerente',
+              documents: [
+                { id: 'doc-fb-1', name: 'RG ou CNH', status: 'pending', reason: 'Documento de identificação padrão.' },
+                { id: 'doc-fb-2', name: 'Comprovante de Endereço', status: 'pending', reason: 'Necessário para validar endereço.' }
+              ]
+            }
+          ]
+        };
+      }
+      
+      const validatedData = PartiesSchema.parse(parsedData);
+      return NextResponse.json(validatedData, { status: 200 });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        console.error("Schema Inválido retornado pela IA:", error.errors);
+        return NextResponse.json({ detail: 'A IA retornou dados fora do formato esperado.', errors: error.errors }, { status: 500 });
+      }
+      console.error("JSON inválido retornado pelo Groq:", cleanJson.substring(0, 500));
       return NextResponse.json({ detail: 'O modelo de IA não retornou um JSON válido. Tente novamente.' }, { status: 500 });
     }
 

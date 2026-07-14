@@ -8,6 +8,7 @@ interface Document {
   name: string;
   status: 'pending' | 'uploaded' | 'updating';
   reason: string;
+  path?: string;
 }
 
 interface Party {
@@ -195,9 +196,10 @@ function ProcessRail({ current }: { current: ViewKey }) {
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewKey>('landing');
   const [user, setUser] = useState<{ email: string; name: string } | null>(null);
-  const [formId, setFormId] = useState<string | null>(null);
-  const [partiesData, setPartiesData] = useState<Party[]>(initialMockParties);
+  const [partiesData, setPartiesData] = useState<Party[]>([]);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
+  const [formId, setFormId] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const addToast = (message: string, type = 'default') => {
@@ -221,22 +223,44 @@ export default function App() {
 
   const handleUploadStart = async (file: File) => {
     setOriginalFile(file);
-    setFormId(`DOC-${Date.now().toString(36).toUpperCase()}`);
+    setIsAnalyzing(true);
     setCurrentView('analyzing');
-    addToast('Processando documento com Groq…');
+    addToast('Processando documento com IA…');
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('type', 'original');
+
     try {
-      const res = await fetch('/api/forms/analyze', {
+      const upRes = await fetch('/api/forms/upload', {
         method: 'POST',
         body: formData,
       });
+      const upData = await upRes.json();
+      if (!upRes.ok) throw new Error(upData.detail || 'Erro no upload original');
+      
+      setFormId(upData.formId);
+
+      // Usando FormData para enviar para a análise
+      const analyzeData = new FormData();
+      analyzeData.append('file', file);
+      const res = await fetch('/api/forms/analyze', {
+        method: 'POST',
+        body: analyzeData,
+      });
+      
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Erro desconhecido');
+      if (!res.ok) throw new Error(data.detail || 'Erro na análise da IA');
+      
+      if (!data.parties || data.parties.length === 0) {
+        throw new Error('A IA não conseguiu identificar exigências neste documento. Verifique se o PDF contém texto legível.');
+      }
+      
       setPartiesData(data.parties);
     } catch (error: any) {
       addToast(error.message, 'error');
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -297,7 +321,7 @@ export default function App() {
         {currentView === 'landing'   && <LandingView   onGetStarted={() => setCurrentView('login')} />}
         {currentView === 'login'     && <LoginView     onLogin={handleLogin} onBack={() => setCurrentView('landing')} />}
         {currentView === 'upload'    && <UploadView    onUpload={handleUploadStart} />}
-        {currentView === 'analyzing' && <AnalyzingView onComplete={handleAnalysisComplete} />}
+        {currentView === 'analyzing' && <AnalyzingView onComplete={handleAnalysisComplete} isAnalyzing={isAnalyzing} />}
         {currentView === 'checklist' && (
           <ChecklistView
             parties={partiesData}
@@ -314,6 +338,7 @@ export default function App() {
             setParties={setPartiesData}
             addToast={addToast}
             onBack={() => setCurrentView('checklist')}
+            formId={formId}
           />
         )}
       </main>
@@ -626,18 +651,21 @@ const ANALYSIS_STEPS = [
   { text: 'Estruturando matriz de due diligence', time: 1200 },
 ];
 
-function AnalyzingView({ onComplete }: { onComplete: () => void }) {
+function AnalyzingView({ onComplete, isAnalyzing }: { onComplete: () => void, isAnalyzing: boolean }) {
   const [step, setStep] = useState(0);
 
   useEffect(() => {
-    if (step < ANALYSIS_STEPS.length) {
+    if (step < ANALYSIS_STEPS.length - 1) {
       const t = setTimeout(() => setStep(s => s + 1), ANALYSIS_STEPS[step].time);
       return () => clearTimeout(t);
-    } else {
-      const t = setTimeout(onComplete, 600);
+    } else if (!isAnalyzing) {
+      const t = setTimeout(() => {
+        setStep(ANALYSIS_STEPS.length);
+        setTimeout(onComplete, 600);
+      }, 500);
       return () => clearTimeout(t);
     }
-  }, [step, onComplete]);
+  }, [step, isAnalyzing, onComplete]);
 
   const progress = Math.round((step / ANALYSIS_STEPS.length) * 100);
 
@@ -737,15 +765,29 @@ function ChecklistView({ parties, setParties, formId, addToast, originalFile, on
     URL.revokeObjectURL(url);
   };
 
-  const handleFillForm = () => {
+  const handleFillForm = async () => {
     if (pct < 100) {
       addToast('Anexe todos os documentos antes de preencher o formulário.', 'error');
       return;
     }
+    if (!formId) return;
+
     addToast('Preenchendo formulário automaticamente com IA...', 'default');
-    setTimeout(() => {
-      addToast('Formulário preenchido e gerado com sucesso!', 'success');
-    }, 2500);
+    
+    try {
+      const res = await fetch('/api/forms/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formId, parties })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Erro na geração');
+      
+      addToast('Download iniciado!', 'success');
+      window.open(data.downloadUrl, '_blank');
+    } catch (error: any) {
+      addToast(error.message, 'error');
+    }
   };
 
   return (
@@ -783,6 +825,14 @@ function ChecklistView({ parties, setParties, formId, addToast, originalFile, on
       <div className="fade-up delay-1" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 32, background: 'var(--ink-2)', padding: '16px 20px', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
         <button onClick={handleDownloadOriginal} disabled={!originalFile} className="btn-secondary" style={{ padding: '8px 16px', fontSize: 12 }}>
           <IconUpload size={14} style={{ transform: 'rotate(180deg)' }} /> Baixar Original
+        </button>
+        <button onClick={() => {
+          const name = prompt('Nome da nova parte (Ex: Fiador):');
+          if (name) {
+            setParties(ps => [...ps, { id: `party-${Date.now()}`, partyName: name, role: 'Parte', documents: [] }]);
+          }
+        }} className="btn-secondary" style={{ padding: '8px 16px', fontSize: 12 }}>
+          + Adicionar Parte
         </button>
         <button onClick={onOpenClientPortal} className="btn-secondary" style={{ padding: '8px 16px', fontSize: 12, borderColor: 'var(--border-3)' }}>
           <IconInfo size={14} /> Portal do Cliente
@@ -845,14 +895,26 @@ function PartyCard({ party, partyIndex, setParties, addToast }: {
           </p>
           <h3 style={{ fontSize: 15, fontWeight: 400, color: 'var(--parchment)' }}>{party.partyName}</h3>
         </div>
-        <span className="font-mono-doc" style={{
-          fontSize: 10, letterSpacing: '0.06em',
-          color: allDone ? 'var(--forest)' : 'var(--dust)',
-          border: `1px solid ${allDone ? 'var(--forest)' : 'var(--border-2)'}`,
-          padding: '3px 10px', borderRadius: 2,
-        }}>
-          {uploadedCount}/{totalCount}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={() => {
+            const docName = prompt('Nome do documento exigido:');
+            if (docName) {
+              setParties(ps => ps.map((p, i) => i !== partyIndex ? p : {
+                ...p, documents: [...p.documents, { id: `doc-${Date.now()}`, name: docName, status: 'pending', reason: 'Adicionado manualmente.' }]
+              }));
+            }
+          }} style={{ fontSize: 11, color: 'var(--parchment)', background: 'rgba(240,235,225,0.05)', border: '1px solid var(--border-3)', padding: '4px 10px', borderRadius: 4, cursor: 'pointer' }}>
+            + Documento
+          </button>
+          <span className="font-mono-doc" style={{
+            fontSize: 10, letterSpacing: '0.06em',
+            color: allDone ? 'var(--forest)' : 'var(--dust)',
+            border: `1px solid ${allDone ? 'var(--forest)' : 'var(--border-2)'}`,
+            padding: '3px 10px', borderRadius: 2,
+          }}>
+            {uploadedCount}/{totalCount}
+          </span>
+        </div>
       </div>
 
       {/* Documentos */}
@@ -972,18 +1034,36 @@ function DocRow({ doc, isLast, onToggle }: { doc: Document; isLast: boolean; onT
 /* ══════════════════════════════════════════════════════════════
    PORTAL DO CLIENTE
 ══════════════════════════════════════════════════════════════ */
-function ClientPortalView({ parties, setParties, addToast, onBack }: any) {
-  const handleToggle = (partyIdx: number, docId: string, current: string) => {
+function ClientPortalView({ parties, setParties, addToast, onBack, formId }: any) {
+  const handleToggle = async (e: React.ChangeEvent<HTMLInputElement>, partyIdx: number, docId: string, current: string) => {
     if (current === 'uploaded' || current === 'updating') return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     setParties((ps: Party[]) => ps.map((p, i) => i !== partyIdx ? p : {
       ...p, documents: p.documents.map(d => d.id === docId ? { ...d, status: 'updating' } : d),
     }));
-    setTimeout(() => {
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'supporting');
+      formData.append('formId', formId);
+
+      const upRes = await fetch('/api/forms/upload', { method: 'POST', body: formData });
+      const upData = await upRes.json();
+      if (!upRes.ok) throw new Error(upData.detail || 'Erro no upload');
+
       setParties((ps: Party[]) => ps.map((p, i) => i !== partyIdx ? p : {
-        ...p, documents: p.documents.map(d => d.id === docId ? { ...d, status: 'uploaded' } : d),
+        ...p, documents: p.documents.map(d => d.id === docId ? { ...d, status: 'uploaded', path: upData.path } : d),
       }));
       addToast('Documento recebido e anexado.', 'success');
-    }, 1500);
+    } catch(err: any) {
+      addToast('Erro ao anexar arquivo', 'error');
+      setParties((ps: Party[]) => ps.map((p, i) => i !== partyIdx ? p : {
+        ...p, documents: p.documents.map(d => d.id === docId ? { ...d, status: 'pending' } : d),
+      }));
+    }
   };
 
   return (
@@ -1024,7 +1104,7 @@ function ClientPortalView({ parties, setParties, addToast, onBack }: any) {
                     ) : (
                       <label style={{ cursor: 'pointer' }}>
                         <span className="btn-primary" style={{ padding: '8px 24px', fontSize: 12 }}>Anexar Arquivo</span>
-                        <input type="file" style={{ display: 'none' }} onChange={() => handleToggle(pIdx, doc.id, doc.status)} />
+                        <input type="file" style={{ display: 'none' }} onChange={(e) => handleToggle(e, pIdx, doc.id, doc.status)} />
                       </label>
                     )}
                   </div>
